@@ -18,14 +18,19 @@ setup_args = {
     'install_requires': [
         'matplotlib',
         'networkx',
-        'pynwb'
+        'pynwb',
+        'pillow',
+        'sphinx==1.6.5',
+        'sphinx-gallery',
+        'sphinx_rtd_theme'
     ],
     'packages': find_packages(),
     'package_data': {'nwb_docutils': ["*.pynb"]},
     'entry_points': {
         'console_scripts': [
             'nwb_generate_format_docs=nwb_docutils.generate_format_docs:main',
-            'nwb_init_sphinx_extension_doc=nwb_docutils.init_sphinx_extension_doc:main'
+            'nwb_init_sphinx_extension_doc=nwb_docutils.init_sphinx_extension_doc:main',
+            'nwb_gallery_prototype=nwb_docutils.sg_prototype:main'
         ]
     },
     'classifiers': [
