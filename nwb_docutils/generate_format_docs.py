@@ -14,16 +14,8 @@ from pynwb.form.spec.namespace import NamespaceCatalog
 from collections import OrderedDict
 import warnings
 import os
-import sys
-try:
-    from utils.render import RSTDocument, RSTTable, SpecFormatter
-except ImportError:
-    try:
-        from render import RSTDocument, RSTTable, SpecFormatter
-    except ImportError:
-        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")))
-        from utils.render import RSTDocument, RSTTable, SpecFormatter
-        warnings.warn("The import path for utils/render may not be set properly")
+
+from .render import RSTDocument, RSTTable, SpecFormatter
 
 # Import settings from the configuration file
 try:
@@ -59,15 +51,7 @@ try:
     # make sure that we can import pyplot an networkX
     from matplotlib import pyplot as plt
     import networkx
-    # Try our best to get the other rendering helper functions imported
-    try:
-        from utils.render import NXGraphHierarchyDescription, HierarchyDescription
-    except ImportError:
-        from render import NXGraphHierarchyDescription, HierarchyDescription
-    except ImportError:
-        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")))
-        from utils.render import NXGraphHierarchyDescription, HierarchyDescription
-        warnings.warn("The import path for utils/render may not be set properly")
+    from .render import NXGraphHierarchyDescription, HierarchyDescription
     # If all the imports worked then we can render the plots
     INCLUDE_GRAPHS = True
 except ImportError:
@@ -79,8 +63,6 @@ try:
     import ruamel.yaml as yaml
 except ImportError:
     import yaml
-from glob import iglob
-import os
 
 
 CUSTOM_LATEX_TABLE_COLUMNS = "|p{4cm}|p{1cm}|p{10cm}|"
