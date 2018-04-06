@@ -30,6 +30,13 @@ Available Tools
 * ``nwb_gallery_prototype``
 
 
+Available Modules
+-----------------
+
+* ``nwb_docutils/render.py``: This module is used to generate figures of the hierarchies of NWB-N files and
+  specifications as well as to help with the programmatic generation of reStructuredText (RST) documents.
+
+
 History
 -------
 
