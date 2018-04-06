@@ -41,6 +41,6 @@ Check the `PyPI testing package page <https://test.pypi.org/project/nwb-docutils
 
 ::
 
-    twine upload --sign dist/*
+    twine upload dist/*
 
 Check the `PyPI package page <https://pypi.org/project/nwb-docutils/>`_.
