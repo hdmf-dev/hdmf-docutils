@@ -21,7 +21,7 @@ setup_args = {
         'pynwb'
     ],
     'packages': find_packages(),
-    'package_data': {'nwb_docutils': ["*.pynb"]},
+    'package_data': {'nwb_docutils': ["*.ipynb"]},
     'entry_points': {
         'console_scripts': [
             'nwb_generate_format_docs=nwb_docutils.generate_format_docs:main',
