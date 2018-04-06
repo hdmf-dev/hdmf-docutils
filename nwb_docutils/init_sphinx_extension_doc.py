@@ -924,9 +924,6 @@ def copy_utils(output):
     except CalledProcessError:
         print("Copy of utils dir failed: " + str(command))
 
-    except CalledProcessError:
-        print("Copy of utils dir failed: " + str(command))
-
 
 #######################################
 #  MAIN
