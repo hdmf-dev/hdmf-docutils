@@ -47,7 +47,7 @@ class RawDescriptionDefaultHelpArgParseFormatter(argparse.ArgumentDefaultsHelpFo
 #####################################################
 #  Create Readme.md
 #####################################################
-def get_readme(custom_description, custom_release_notes, copy_utils):
+def get_readme(custom_description, custom_release_notes):
     readme_txt = \
 """
 **What to do next**
@@ -64,10 +64,7 @@ def get_readme(custom_description, custom_release_notes, copy_utils):
 
     readme_txt += "* **Edit the build configuration** Edit ``source/conf.py`` to customize your build configuration\n"
 
-    if copy_utils:
-        readme_txt += "* **Customize document autogeneration** The autogeneration is controlled by a number of settings in ``conf.py`` described below. The Python utilities used to autogenerate Sphinx docs from the YAML/JSON specification sources is ``nwb_generate_format_docs`` provided by nwb-docutils package\n"
-    else:
-        readme_txt += "* **Customize document autogeneration** The autogeneration is controlled by a number of settings in ``conf.py`` described below.\n"
+    readme_txt += "* **Customize document autogeneration** The autogeneration is controlled by a number of settings in ``conf.py`` described below.\n"
 
     readme_txt += \
 """
@@ -708,9 +705,9 @@ def define_cl_args():
     parser.add_argument('--output_hierarchy_master', dest='output_hierarchy_master', action='store', type=str, required=False,
                         help='Name of the master reStructuredText file with the hierarchy of types.', default="format_spec_type_hierarchy.inc")
     parser.add_argument('--utilsdir', dest='utilsdir', action='store', type=str, required=False,
-                        help='Deprecated option. Not required following the create of nwb-docutils package', default="OBSOLETE")
-    parser.add_argument('--copy_utils', dest='copy_utils', action='store', type=bool_type, required=False, default=True,
-                        help="Disable copying of the utils folder from nwb-schema. If set then --utildir should be specified.")
+                        help='Unused option (obsoleted following the creation of nwb-docutils package).', default="OBSOLETE")
+    parser.add_argument('--copy_utils', dest='copy_utils', action='store', type=str, required=False, default="OBSOLETE",
+                        help="Unused option (obsoleted following the creation of nwb-docutils package).")
     parser.add_argument('--resolve_type_inc', dest='resolve_type_inc', action='store', type=bool_type, required=False, default=False,
                         help="Always resolve type includes to show the full spec of an object including inherited components?")
     parser.add_argument('--latex_clearpage_after_type', dest='latex_clearpage_after_type', action='store', type=bool_type, required=False, default=True,
@@ -894,35 +891,12 @@ def write_index_rst(output, format_master, master, sphinx_master):
 #######################################
 #  Write the readme file
 #######################################
-def write_readme(output, custom_description, custom_release_notes, copy_utils):
+def write_readme(output, custom_description, custom_release_notes):
     outfilename = os.path.join(output, 'Readme.md')
     outfile = open(outfilename, 'w')
     outfile.write(get_readme(custom_description=custom_description,
-                             custom_release_notes=custom_release_notes,
-                             copy_utils=copy_utils))
+                             custom_release_notes=custom_release_notes))
     outfile.close()
-
-#######################################
-#  Copy the utils and licences
-#######################################
-def copy_utils(output):
-    utilsdir = os.path.dirname(os.path.abspath(__file__))
-    try:
-        command = ['cp',
-                   '-r',
-                   utilsdir,
-                   output]
-        check_call(command, shell=False)
-        command = ['cp',
-               os.path.join(utilsdir, '../Legal.txt'),
-               os.path.join(output, 'utils')]
-        check_call(command, shell=False)
-        command = ['cp',
-               os.path.join(utilsdir, '../license.txt'),
-               os.path.join(output, 'utils')]
-        check_call(command, shell=False)
-    except CalledProcessError:
-        print("Copy of utils dir failed: " + str(command))
 
 
 #######################################
@@ -960,12 +934,9 @@ def main():
                     format_master=clargs['format_master'],
                     master=clargs['master'],
                     sphinx_master=sphinx_master)
-    if clargs['copy_utils']:
-        copy_utils(output=clargs['output'])
     write_readme(output=clargs['output'],
                  custom_description=clargs['custom_description'],
-                 custom_release_notes=clargs['custom_release_notes'],
-                 copy_utils=clargs['copy_utils'])
+                 custom_release_notes=clargs['custom_release_notes'])
 
 
 if __name__ == "__main__":
