@@ -916,11 +916,11 @@ def copy_utils(output):
                    output]
         check_call(command, shell=False)
         command = ['cp',
-               os.path.join(utilsdir, '../../Legal.txt'),
+               os.path.join(utilsdir, '../Legal.txt'),
                os.path.join(output, 'utils')]
         check_call(command, shell=False)
         command = ['cp',
-               os.path.join(utilsdir, '../../license.txt'),
+               os.path.join(utilsdir, '../license.txt'),
                os.path.join(output, 'utils')]
         check_call(command, shell=False)
     except CalledProcessError:
