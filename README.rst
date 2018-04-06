@@ -18,6 +18,18 @@ Installation
   pip install nwb-docutils
 
 
+
+Available Tools
+---------------
+
+* ``nwb_generate_format_docs``: Generate figures and RST documents from the NWB YAML specification for the
+  format specification documentation.
+
+* ``nwb_init_sphinx_extension_doc``: Create format specification SPHINX documentation for an NWB extension.
+
+* ``nwb_gallery_prototype``
+
+
 History
 -------
 
