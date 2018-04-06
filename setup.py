@@ -24,6 +24,7 @@ setup_args = {
         'sphinx-gallery',
         'sphinx_rtd_theme'
     ],
+    'setup_requires': 'pytest-runner',
     'packages': find_packages(),
     'package_data': {'nwb_docutils': ["*.ipynb"]},
     'entry_points': {
