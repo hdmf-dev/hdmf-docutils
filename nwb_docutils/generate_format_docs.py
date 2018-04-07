@@ -8,6 +8,8 @@ Generate figures and RST documents from the NWB YAML specification for the forma
 # Python 2/3 compatibility
 from __future__ import print_function
 
+import pynwb
+
 from pynwb.form.spec.spec import GroupSpec, DatasetSpec, LinkSpec, AttributeSpec, RefSpec
 from pynwb.spec import NWBGroupSpec, NWBDatasetSpec, NWBNamespace
 from pynwb.form.spec.namespace import NamespaceCatalog
@@ -81,11 +83,17 @@ class SchemaHelper(object):
         Load an nwb namespace from file
         :return:
         """
-        namespace = NamespaceCatalog(default_namespace,
-                                     group_spec_cls=NWBGroupSpec,
-                                     dataset_spec_cls=NWBDatasetSpec,
-                                     spec_namespace_cls=NWBNamespace)
-        namespace.load_namespaces(namespace_file, resolve=resolve)
+        # namespace = NamespaceCatalog(default_namespace,
+        #                              group_spec_cls=NWBGroupSpec,
+        #                              dataset_spec_cls=NWBDatasetSpec,
+        #                              spec_namespace_cls=NWBNamespace)
+        # namespace.load_namespaces(namespace_file, resolve=resolve)
+
+        # XXX
+        type_map = pynwb.get_type_map()
+        type_map.load_namespaces(namespace_file)
+        namespace = type_map.namespace_catalog
+
         default_spec_catalog = namespace.get_namespace(default_namespace).catalog   # TODO check if this should be 'core' or default_namespace?
         return namespace, default_spec_catalog
 
