@@ -83,18 +83,20 @@ class SchemaHelper(object):
         Load an nwb namespace from file
         :return:
         """
-        # namespace = NamespaceCatalog(default_namespace,
-        #                              group_spec_cls=NWBGroupSpec,
-        #                              dataset_spec_cls=NWBDatasetSpec,
-        #                              spec_namespace_cls=NWBNamespace)
-        # namespace.load_namespaces(namespace_file, resolve=resolve)
+        # Default load when documenting extensions
+        try:
+            type_map = pynwb.get_type_map()
+            type_map.load_namespaces(namespace_file)
+            namespace = type_map.namespace_catalog
+        # When renderning the core spec we'll get a KeyError because it already exists so we'll load the namespace separately
+        except KeyError:
+            namespace = NamespaceCatalog(default_namespace,
+                                      group_spec_cls=NWBGroupSpec,
+                                      dataset_spec_cls=NWBDatasetSpec,
+                                      spec_namespace_cls=NWBNamespace)
+            namespace.load_namespaces(namespace_file, resolve=resolve)
 
-        # XXX
-        type_map = pynwb.get_type_map()
-        type_map.load_namespaces(namespace_file)
-        namespace = type_map.namespace_catalog
-
-        default_spec_catalog = namespace.get_namespace(default_namespace).catalog   # TODO check if this should be 'core' or default_namespace?
+        default_spec_catalog = namespace.get_namespace(default_namespace).catalog
         return namespace, default_spec_catalog
 
     @staticmethod
