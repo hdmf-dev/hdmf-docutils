@@ -279,7 +279,7 @@ class SchemaHelper(object):
         all_types = {k: False for k in registered_types}
 
         def get_list_of_subtypes(spec, subtypes=None, include_main_type=True, exclude=None):
-            """Compile a list of all objects of a given type
+            """Compile an OrderedDict of all objects of a given type
 
             :param spec: Select spec computed via compute_neurodata_type_hierarchy(..)
             :param subtypes: OrderedDict with already detected subtypes. Used for recursive detection of types.
@@ -297,58 +297,97 @@ class SchemaHelper(object):
                     get_list_of_subtypes(spec=v , subtypes=subtypes, include_main_type=True, exclude=exclude)
             return subtypes
 
+        def sort_types(types):
+            """
+            Sort the dict  of all objects of a given type by name
+            """
+            re = OrderedDict()
+            for k in sorted(list(types.keys())):
+                re[k] = types[k]
+            return re
+
         # NWB-File gets its own section
         try:
             nwb_file_subtypes = get_list_of_subtypes(type_hierarchy['NWBContainer']['subtypes']['NWBFile'])
         except:
-            nwb_file_subtypes = []
+            nwb_file_subtypes = {}
         if len(nwb_file_subtypes) > 0:
             sections.append(NeurodataTypeSection('Main Data File', nwb_file_subtypes))
             for k in nwb_file_subtypes.keys():
                 all_types[k] = True
 
+        # Base types get their own section
+        try:
+            nwb_base_types = OrderedDict()
+            nwb_base_types['NWBContainer'] = type_hierarchy['NWBContainer']
+            nwb_base_types['NWBData'] = type_hierarchy['NWBData']
+            nwb_base_types['NWBDataInterface'] = type_hierarchy['NWBContainer']['subtypes']['NWBDataInterface']
+        except:
+            nwb_base_types = []
+        if len(nwb_base_types) > 0:
+            sections.append(NeurodataTypeSection('Base Types', nwb_base_types))
+            for k in nwb_base_types.keys():
+                all_types[k] = True
+
         # Time-series get their own section
         try:
-            time_series_subtypes = get_list_of_subtypes(type_hierarchy['NWBContainer']['subtypes']['TimeSeries'])
+            time_series_subtypes = get_list_of_subtypes(type_hierarchy['NWBContainer']['subtypes']['NWBDataInterface']['subtypes']['TimeSeries'])
         except:
-            time_series_subtypes = []
+            time_series_subtypes = {}
         if len(time_series_subtypes) > 0:
-            sections.append(NeurodataTypeSection('TimeSeries Types', time_series_subtypes))
+            sections.append(NeurodataTypeSection('TimeSeries Types', sort_types(time_series_subtypes)))
             for k in time_series_subtypes.keys():
                 all_types[k] = True
 
         # Analyse modules get their own section
-        analysis_modules_section = NeurodataTypeSection('Data Processing')
         try:
-            module_subtypes = get_list_of_subtypes(type_hierarchy['NWBContainer']['subtypes']['ProcessingModule'])
+            nwbcontainer_subtypes = get_list_of_subtypes(type_hierarchy['NWBContainer'], #['subtypes']['NWBDataInterface'])
+                                                         include_main_type=False,
+                                                         exclude=['Device',
+                                                                  'ElectrodeGroup',
+                                                                  'Epoch',
+                                                                  'EpochTimeSeries',
+                                                                  'Subject'])
         except:
-            module_subtypes = []
-        if len(module_subtypes) > 0:
-            for k, v in module_subtypes.items():
-                analysis_modules_section['neurodata_types'][k] = v
+            nwbcontainer_subtypes = {}
+        if len(nwbcontainer_subtypes) > 0:
+            data_processing_types = OrderedDict()
+            for k, v in nwbcontainer_subtypes.items():
+                if not all_types[k]:  # Avoid duplicate listing of types
+                    data_processing_types[k] = v
+                    all_types[k] = True
+            sections.append(NeurodataTypeSection('Data Processing', sort_types(data_processing_types)))
+
+         # Base types get their own section
+        try:
+            nwb_primitive_types = OrderedDict()
+            nwb_primitive_types['VectorData'] = type_hierarchy['NWBData']['subtypes']['VectorData']
+            nwb_primitive_types['VectorIndex'] = type_hierarchy['NWBData']['subtypes']['VectorIndex']
+            nwb_primitive_types['ElementIdentifiers'] = type_hierarchy['NWBData']['subtypes']['ElementIdentifiers']
+        except:
+            nwb_primitive_types = []
+        if len(nwb_primitive_types) > 0:
+            sections.append(NeurodataTypeSection('Primitive Types', nwb_primitive_types))
+            for k in nwb_primitive_types.keys():
                 all_types[k] = True
 
-        # NWB Containers get their own section
-        try:
-            interface_subtypes = get_list_of_subtypes(type_hierarchy['NWBContainer'],
-                                                      include_main_type=False,
-                                                      exclude=['Device', 'ElectrodeGroup', 'Epoch']) # 'IntracellularElectrode', 'Image', 'EpochTimeSeries', 'OpticalChannel', 'OptogeneticStimulusSite', 'ROI', 'CorrectedImageStack', 'SpecFile', 'PlaneSegmentation', 'Epoch', 'ImagePlane', 'SpikeUnit'])  # List those types under Others as they are not commonly part of ProcessingModules
-        except:
-            interface_subtypes = []
-        if len(interface_subtypes) > 0:
-            for k, v in interface_subtypes.items():
-                if not all_types[k]:  # Avoid duplicate listing of types
-                    analysis_modules_section['neurodata_types'][k] = v
-                    all_types[k] = True
-        sections.append(analysis_modules_section)
 
         # Section for all other neurodata types that have not been sorted into the hierarchy yet.
-        other_types_section = NeurodataTypeSection('Other Types')
+        other_types = OrderedDict()
         for k, v in all_types.items():
             if not v:
-                other_types_section['neurodata_types'][k] = v
-        sections.append(other_types_section)
+                other_types[k] = v
+        if len(other_types) > 0:
+            sections.append(NeurodataTypeSection('Other Types', sort_types(other_types)))
+            for k in other_types:
+                all_types[k] = True
 
+        # Check that all types have been covered
+        for k, v in all_types.items():
+            if not v:
+                PrintHelper.print("WARNING: %s missing in type hierarchy" % str(v))
+
+        # Return the list of our sections
         return sections
 
 
