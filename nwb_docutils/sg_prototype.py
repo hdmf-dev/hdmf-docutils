@@ -22,7 +22,6 @@ __version__ = '0.1.0'
 OPEN_DEFAULT = False
 TGT_DIR_DEFAULT_SUFFIX = os.path.abspath('_html_sg-prototype')
 TGT_DIR_DEFAULT = os.path.abspath(os.path.join('.', TGT_DIR_DEFAULT_SUFFIX))
-SRC_FILE_NARGS = '?'
 
 def assert_firefox():
 
@@ -104,16 +103,16 @@ def main():
 
     # Define command line args:
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('src_file', type=str, help='file to convert; if not supplied, will use a helloworld', nargs=SRC_FILE_NARGS, default=None)
+    parser.add_argument('src_file', type=str, help='file to convert; if not supplied, will use a helloworld', nargs='*')
     parser.add_argument('-o', '--output', type=str, help='output directory of build', default=None, dest='tgt_dir')
     parser.add_argument('--open', action='store_true', default=OPEN_DEFAULT, help='automatically open after build (experimental)')
 
     # Unpack args:
     args = parser.parse_args()
-    if args.src_file is not None:
+    if len(args.src_file) != 0:
         src_file = os.path.expanduser(args.src_file[0])
     else:
-        src_file = args.src_file
+        src_file = None
     open_html = args.open
     tgt_dir = args.tgt_dir
     if tgt_dir is None:
