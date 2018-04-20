@@ -32,13 +32,16 @@ def assert_firefox():
         return False
 
 
-def check_tgt_dir(tgt_dir):
-    if os.path.exists(tgt_dir):
-        raise RuntimeError('Target directory %s already exists; specify different directory \
-                            (-o or --output) or remove' % tgt_dir)
+def check_tgt_dir(tgt_dir, clobber=False):
+    if os.path.exists(tgt_dir) and not clobber:
+        raise RuntimeError('Target directory %s already exists; '
+                           'specify a different directory using the -o flag '
+                           'or use the --clobber flag to replace' % tgt_dir)
+    elif os.path.exists(tgt_dir) and clobber:
+        shutil.rmtree(tgt_dir)
 
 
-def build(src_file, tgt_dir=TGT_DIR_DEFAULT, open_html=OPEN_DEFAULT, conda_env=None):
+def build(src_file, tgt_dir=TGT_DIR_DEFAULT, open_html=OPEN_DEFAULT, conda_env=None, clobber=False):
 
     # Get temporary build dir, and make html using template:
     temp_dir = tempfile.mkdtemp()
@@ -61,7 +64,7 @@ def build(src_file, tgt_dir=TGT_DIR_DEFAULT, open_html=OPEN_DEFAULT, conda_env=N
     assert err_code == 0
 
     # Move built html to tgt_dir:
-    check_tgt_dir(tgt_dir)
+    check_tgt_dir(tgt_dir, clobber)
     shutil.move(os.path.join(temp_dir, 'docs', '_build', 'html'), tgt_dir)
 
     # Grab out generated example file:
@@ -106,6 +109,7 @@ def main():
     parser.add_argument('src_file', type=str, help='file to convert; if not supplied, will use a helloworld', nargs='*')
     parser.add_argument('-o', '--output', type=str, help='output directory of build', default=None, dest='tgt_dir')
     parser.add_argument('--open', action='store_true', default=OPEN_DEFAULT, help='automatically open after build (experimental)')
+    parser.add_argument('--clobber', action='store_true', dest='clobber', default=False, help='remove target directory if it exists')
 
     # Unpack args:
     args = parser.parse_args()
@@ -118,9 +122,9 @@ def main():
     if tgt_dir is None:
         tgt_dir = os.path.join(os.path.abspath(os.path.expanduser(os.path.curdir)), TGT_DIR_DEFAULT_SUFFIX)
 
-    check_tgt_dir(tgt_dir)
+    check_tgt_dir(tgt_dir, args.clobber)
 
-    return build(src_file, tgt_dir=tgt_dir, open_html=open_html)
+    return build(src_file, tgt_dir=tgt_dir, open_html=open_html, clobber=args.clobber)
 
 if __name__ == "__main__":
     main()
