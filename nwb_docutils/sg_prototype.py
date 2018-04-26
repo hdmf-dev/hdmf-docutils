@@ -14,6 +14,8 @@ import subprocess
 import argparse
 import shutil
 from sys import platform as _platform
+import webbrowser
+import urllib.parse
 
 __author__ = """Nicholas Cain"""
 __email__ = 'nicholasc@alleninstitute.org'
@@ -80,24 +82,9 @@ def build(src_file, tgt_dir=TGT_DIR_DEFAULT, open_html=OPEN_DEFAULT, conda_env=N
 
     # Open or print file:
     if open_html is True:
-        if _platform == "linux" or _platform == "linux2":
-            if assert_firefox():
-                open_command = 'firefox %s' % output_file
-            else:
-                raise NotImplementedError
-        elif _platform == "darwin":
-            open_command = 'open %s' % output_file
-        elif _platform == "win32":
-            raise NotImplementedError
-        elif _platform == "win64":
-            raise NotImplementedError
-        else:
-            raise NotImplementedError
-        subprocess.call(open_command, shell=True)
-
-    else:
-
-        pass
+        output_file_split = urllib.parse.urlsplit(output_file, scheme='file')
+        output_file_unsplit = urllib.parse.urlunsplit(output_file_split)
+        webbrowser.open(output_file_unsplit)
 
     return 0
 
