@@ -9,7 +9,7 @@ Overview
 
 This project is a collection of CLIs, scripts and modules useful to generate the NWB documentation.
 
-[Using nwb-docutils to generate documentation for an extension](http://pynwb.readthedocs.io/en/latest/extensions.html#documenting-extensions)
+Using nwb-docutils to generate documentation for an extension: http://pynwb.readthedocs.io/en/latest/extensions.html#documenting-extensions
 
 
 Installation
