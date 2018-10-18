@@ -347,7 +347,8 @@ class SchemaHelper(object):
                                                                   'ElectrodeGroup',
                                                                   'Epoch',
                                                                   'EpochTimeSeries',
-                                                                  'Subject'])
+                                                                  'Subject',
+                                                                  'DynamicTable'])
         except:
             nwbcontainer_subtypes = {}
         if len(nwbcontainer_subtypes) > 0:
@@ -358,16 +359,20 @@ class SchemaHelper(object):
                     all_types[k] = True
             sections.append(NeurodataTypeSection('Data Processing', sort_types(data_processing_types)))
 
-         # Base types get their own section
+        # Base types get their own section
         try:
             nwb_primitive_types = OrderedDict()
+            nwb_primitive_types['Index'] = type_hierarchy['NWBData']['subtypes']['Index']
             nwb_primitive_types['VectorData'] = type_hierarchy['NWBData']['subtypes']['VectorData']
-            nwb_primitive_types['VectorIndex'] = type_hierarchy['NWBData']['subtypes']['VectorIndex']
+            nwb_primitive_types['VectorIndex'] = type_hierarchy['NWBData']['subtypes']['Index']['subtypes']['VectorIndex']
             nwb_primitive_types['ElementIdentifiers'] = type_hierarchy['NWBData']['subtypes']['ElementIdentifiers']
+            nwb_primitive_types['TableColumn'] = type_hierarchy['NWBData']['subtypes']['TableColumn']
+            nwb_primitive_types['DynamicTable'] = type_hierarchy['NWBContainer']['subtypes']['NWBDataInterface']['subtypes']['DynamicTable']
+            nwb_primitive_types['DynamicTableRegion'] = type_hierarchy['NWBData']['subtypes']['DynamicTableRegion']
         except:
             nwb_primitive_types = []
         if len(nwb_primitive_types) > 0:
-            sections.append(NeurodataTypeSection('Primitive Types', nwb_primitive_types))
+            sections.append(NeurodataTypeSection('Primitive Types and Data Structures', nwb_primitive_types))
             for k in nwb_primitive_types.keys():
                 all_types[k] = True
 
