@@ -309,7 +309,9 @@ class SchemaHelper(object):
         # NWB-File gets its own section
         try:
             nwb_file_subtypes = get_list_of_subtypes(type_hierarchy['NWBContainer']['subtypes']['NWBFile'])
-        except:
+        except Exception as e:
+            PrintHelper.print("WARNING: Exception occurred in sorting sections for NWBFile type." + str(e),
+                              PrintHelper.FAIL)
             nwb_file_subtypes = {}
         if len(nwb_file_subtypes) > 0:
             sections.append(NeurodataTypeSection('Main Data File', nwb_file_subtypes))
@@ -322,8 +324,10 @@ class SchemaHelper(object):
             nwb_base_types['NWBContainer'] = type_hierarchy['NWBContainer']
             nwb_base_types['NWBData'] = type_hierarchy['NWBData']
             nwb_base_types['NWBDataInterface'] = type_hierarchy['NWBContainer']['subtypes']['NWBDataInterface']
-        except:
-            nwb_base_types = []
+        except Exception as e:
+            PrintHelper.print("WARNING: Exception occurred in sorting sections for base types." + str(e),
+                              PrintHelper.FAIL)
+            nwb_base_types = {}
         if len(nwb_base_types) > 0:
             sections.append(NeurodataTypeSection('Base Types', nwb_base_types))
             for k in nwb_base_types.keys():
@@ -332,7 +336,9 @@ class SchemaHelper(object):
         # Time-series get their own section
         try:
             time_series_subtypes = get_list_of_subtypes(type_hierarchy['NWBContainer']['subtypes']['NWBDataInterface']['subtypes']['TimeSeries'])
-        except:
+        except Exception as e:
+            PrintHelper.print("WARNING: Exception occurred in sorting sections for TimeSeries types." + str(e),
+                              PrintHelper.FAIL)
             time_series_subtypes = {}
         if len(time_series_subtypes) > 0:
             sections.append(NeurodataTypeSection('TimeSeries Types', sort_types(time_series_subtypes)))
@@ -345,11 +351,13 @@ class SchemaHelper(object):
                                                          include_main_type=False,
                                                          exclude=['Device',
                                                                   'ElectrodeGroup',
-                                                                  'Epoch',
                                                                   'EpochTimeSeries',
-                                                                  'Subject',
-                                                                  'DynamicTable'])
-        except:
+                                                                  'Subject'])
+            _ = nwbcontainer_subtypes.pop('DynamicTable')  # Remove DynamicTable. We don't want exclude it above because then we would miss the subtypes
+        except Exception as e:
+            PrintHelper.print("WARNING: Exception occurred in sorting sections for NWBContainer types." + str(e),
+                              PrintHelper.FAIL)
+            warnings.warn("Exception occurred in sorting sections for NWBContainer types." + str(e))
             nwbcontainer_subtypes = {}
         if len(nwbcontainer_subtypes) > 0:
             data_processing_types = OrderedDict()
@@ -368,9 +376,11 @@ class SchemaHelper(object):
             nwb_primitive_types['ElementIdentifiers'] = type_hierarchy['NWBData']['subtypes']['ElementIdentifiers']
             nwb_primitive_types['TableColumn'] = type_hierarchy['NWBData']['subtypes']['TableColumn']
             nwb_primitive_types['DynamicTable'] = type_hierarchy['NWBContainer']['subtypes']['NWBDataInterface']['subtypes']['DynamicTable']
-            nwb_primitive_types['DynamicTableRegion'] = type_hierarchy['NWBData']['subtypes']['DynamicTableRegion']
-        except:
-            nwb_primitive_types = []
+            nwb_primitive_types['DynamicTableRegion'] = type_hierarchy['NWBData']['subtypes']['TableColumn']['subtypes']['DynamicTableRegion']
+        except Exception as e:
+            PrintHelper.print("WARNING: Exception occurred in sorting sections for primitve data structure types." + str(e),
+                              PrintHelper.FAIL)
+            nwb_primitive_types = {}
         if len(nwb_primitive_types) > 0:
             sections.append(NeurodataTypeSection('Primitive Types and Data Structures', nwb_primitive_types))
             for k in nwb_primitive_types.keys():
@@ -390,7 +400,7 @@ class SchemaHelper(object):
         # Check that all types have been covered
         for k, v in all_types.items():
             if not v:
-                PrintHelper.print("WARNING: %s missing in type hierarchy" % str(v))
+                PrintHelper.print("WARNING: %s missing in type hierarchy" % str(v), PrintHelper.WARNING)
 
         # Return the list of our sections
         return sections
