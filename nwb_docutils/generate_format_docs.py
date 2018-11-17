@@ -374,9 +374,8 @@ class SchemaHelper(object):
             nwb_primitive_types['VectorData'] = type_hierarchy['NWBData']['subtypes']['VectorData']
             nwb_primitive_types['VectorIndex'] = type_hierarchy['NWBData']['subtypes']['Index']['subtypes']['VectorIndex']
             nwb_primitive_types['ElementIdentifiers'] = type_hierarchy['NWBData']['subtypes']['ElementIdentifiers']
-            nwb_primitive_types['TableColumn'] = type_hierarchy['NWBData']['subtypes']['TableColumn']
             nwb_primitive_types['DynamicTable'] = type_hierarchy['NWBContainer']['subtypes']['NWBDataInterface']['subtypes']['DynamicTable']
-            nwb_primitive_types['DynamicTableRegion'] = type_hierarchy['NWBData']['subtypes']['TableColumn']['subtypes']['DynamicTableRegion']
+            nwb_primitive_types['DynamicTableRegion'] = type_hierarchy['NWBData']['subtypes']['VectorData']['subtypes']['DynamicTableRegion']
         except Exception as e:
             PrintHelper.print("WARNING: Exception occurred in sorting sections for primitve data structure types." + str(e),
                               PrintHelper.FAIL)
