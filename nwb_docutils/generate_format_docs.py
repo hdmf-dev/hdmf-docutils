@@ -8,21 +8,22 @@ Generate figures and RST documents from the NWB YAML specification for the forma
 # Python 2/3 compatibility
 from __future__ import print_function
 
+
 import pynwb
 
-from pynwb.form.spec.spec import GroupSpec, DatasetSpec, LinkSpec, AttributeSpec, RefSpec
+from hdmf.spec.spec import GroupSpec, DatasetSpec, LinkSpec, AttributeSpec, RefSpec
 from pynwb.spec import NWBGroupSpec, NWBDatasetSpec, NWBNamespace
-from pynwb.form.spec.namespace import NamespaceCatalog
+from hdmf.spec.namespace import NamespaceCatalog
 from collections import OrderedDict
 import warnings
 import os
 
-from .render import RSTDocument, RSTTable, SpecFormatter
+from .rst.rstdoc import  RSTSectionLabelHelper as LabelHelper
+from .rst.rstdoc import RSTDocument, RSTTable
 
 # Import settings from the configuration file
 try:
     from conf_doc_autogen import spec_show_yaml_src, \
-        spec_show_json_src, \
         spec_generate_src_file, \
         spec_show_hierarchy_plots, \
         spec_file_per_type, \
@@ -497,57 +498,6 @@ class PrintHelper:
             cls.print(str(list(sec['neurodata_types'].keys())), cls.OKBLUE)
 
 
-class LabelHelper(object):
-    """
-    Simple helper class used to generate section, table and other labels in the RST document
-    to support cross-referencing.
-    """
-    @staticmethod
-    def get_section_label(neurodata_type):
-        """
-        Get the label of the section with the documenation for the given neurodata_type
-
-        :param neurodata_type: String with the name of the neurodata_type
-        :return: String with the section label where the neurodatatype is described
-        """
-        return 'sec-' + neurodata_type
-
-    @staticmethod
-    def get_src_section_label(neurodata_type):
-        """
-        Get the label for the section with the source YAML/JSON of the given neurodata_type.
-
-        :param neurodata_type: String with the name of the neurodata_type
-        :return: String with the section lable or None in case no sources are included as part of the documentation
-        """
-        if spec_generate_src_file:
-            return 'sec-' + neurodata_type + "-src"
-        elif spec_show_json_src or spec_show_yaml_src:
-            return LabelHelper.get_section_label(neurodata_type)
-        else:
-            None
-
-    @staticmethod
-    def get_group_table_label(parent):
-        """
-        Get the name of the reference for the table listing all subgroups for the parent neurodata_type
-
-        :param parent: String with the name of the parent neurodata_type
-        :return: String with label of the table
-        """
-        return 'table-'+parent+'-groups'
-
-    @staticmethod
-    def get_data_table_label(parent):
-        """
-        Get the name of the reference for the table listing all data for the parent
-
-        :param parent: String with the name of the parent neurodata_type
-        :return: String with label of the table
-        """
-        return 'table-'+parent+'-data'
-
-
 ########################################################
 #  Internal dictionary data structures
 ########################################################
@@ -704,7 +654,6 @@ class RenderDocsHelper(object):
                          namespace_name=None,
                          desc_doc=None,
                          src_doc=None,
-                         show_json_src=True,
                          show_yaml_src=True,
                          file_dir=None,
                          file_per_type=False,
@@ -717,7 +666,6 @@ class RenderDocsHelper(object):
         :param desc_doc: RSTDocument where the description should be rendered. Set to None to not render a description.
         :param src_doc: RSTDocument where the sources of the namespace should be rendered. Set to None to not render a namepsace.
         :param namespace_name: Name of the namespace to be rendered. Set to None if the default namespace should be used
-        :param show_json_src: Boolean indicating that we should render the JSON source in the src_doc
         :param show_yaml_src: Boolean indicating that we should render the YAML source in the src_doc
         :param file_dir: Directory where output RST docs should be stored. Required if file_per_type is True.
         :param file_per_type: Generate a seperate rst files for each neurodata_type and include them
@@ -731,7 +679,7 @@ class RenderDocsHelper(object):
         # Determine file settings
         if src_doc is None:
             seperate_src_file = False
-            if show_json_src or show_yaml_src:
+            if show_yaml_src:
                 src_doc = desc_doc
         else:
             seperate_src_file = True
@@ -815,13 +763,9 @@ class RenderDocsHelper(object):
                 ns_src_doc.add_label(ns_src_label)
                 ns_src_doc.add_subsection(subsec_heading)
                 ns_src_doc.add_text('**Description:** see %s' % ns_src_doc.get_numbered_reference(ns_desc_label) + ns_src_doc.newline + ns_src_doc.newline)
-
-            if show_json_src:
-                ns_src_doc.add_text('**JSON Specification:**' + ns_src_doc.newline + ns_src_doc.newline)
-                ns_src_doc.add_spec(curr_namespace, show_json=True, show_yaml=False)
             if show_yaml_src:
                 ns_src_doc.add_text('**YAML Specification:**' + ns_src_doc.newline + ns_src_doc.newline)
-                ns_src_doc.add_spec(curr_namespace, show_json=False, show_yaml=True)
+                ns_src_doc.add_spec(curr_namespace)
 
         # Save the output files if necessary
         if file_per_type and file_dir is not None:
@@ -1067,7 +1011,6 @@ class RenderDocsHelper(object):
                      src_doc,
                      file_dir,
                      show_hierarchy_plots=True,
-                     show_json_src=True,
                      show_yaml_src=True,
                      file_per_type=False):
         """
@@ -1077,11 +1020,10 @@ class RenderDocsHelper(object):
                               the keys are neurodata_type strings and the values are NeurodataTypeDict
         :param spec_catalog: Catalog of specifications
         :param desc_doc: RSTDocument where the descriptions of the documents should be rendered
-        :param src_doc: RSTDocument where the YAML/JSON sources of the neurodata_types should be rendered. Set to None
+        :param src_doc: RSTDocument where the YAML sources of the neurodata_types should be rendered. Set to None
                         if sources should be rendered in the desc_doc directly.
         :param file_dir: Directory where figures and outpy RST docs should be stored
         :param show_hierarchy_plots: Create figures showing the hierarchy defined by the spec
-        :param show_json_src: Boolean indicating that we should render the JSON source in the src_doc
         :param show_yaml_src: Boolean indicating that we should render the YAML source in the src_doc
         :param file_per_type: Generate a seperate rst files for each neurodata_type and include them
                               in the src_doc and desc_doc (True). If set to False then write the
@@ -1138,7 +1080,7 @@ class RenderDocsHelper(object):
             if seperate_src_file:
                 # Add a link to the source to the main documentQuant
                 additional_props.append('**Source Specification:** see %s' %
-                                        type_desc_doc.get_numbered_reference(label=LabelHelper.get_src_section_label(rt)))
+                                        type_desc_doc.get_numbered_reference(label=LabelHelper.get_src_section_label(rt, spec_generate_src_file, spec_show_yaml_src)))
 
             type_desc_doc.add_text(RenderDocsHelper.render_specification_properties(rt_spec,
                                                                             type_desc_doc.newline,
@@ -1187,12 +1129,12 @@ class RenderDocsHelper(object):
                     PrintHelper.print(rt + '-- RENDER HIERARCHY FAILED DUE TO MISSING PACKAGES', PrintHelper.FAIL)
 
             ####################################################################
-            #  Add the YAML and/or JSON sources to the document if requested
+            #  Add the YAML sources to the document if requested
             ####################################################################
-            # If the JSON/YAML are shown in a seperate chapter than add section headings
+            # If the YAML are shown in a seperate chapter than add section headings
             if seperate_src_file:
                 # Add a section to the file for the sources
-                src_sec_lable = LabelHelper.get_src_section_label(rt)
+                src_sec_lable = LabelHelper.get_src_section_label(rt, spec_generate_src_file,  spec_show_yaml_src)
                 type_src_doc.add_label(src_sec_lable)
                 type_src_doc.add_subsubsection(section_heading)
                 if extend_type is not None:
@@ -1202,11 +1144,7 @@ class RenderDocsHelper(object):
             # Add the YAML for the current spec
             if show_yaml_src:
                 type_src_doc.add_text('**YAML Specification:**' + type_src_doc.newline + type_src_doc.newline)
-                type_src_doc.add_spec(rt_spec, show_json=False, show_yaml=True)
-            # Add the JSON for the current spec
-            if show_json_src:
-                type_src_doc.add_text('**JSON Specification:**' + type_src_doc.newline + type_src_doc.newline)
-                type_src_doc.add_spec(rt_spec, show_json=True, show_yaml=False)
+                type_src_doc.add_spec(rt_spec)
 
             #############################################################################
             #  Add table with dataset and attribute descriptions for the neurodata_type
@@ -1291,7 +1229,7 @@ def main():
     spec_dir = spec_input_spec_dir
     # Set the names of the main output files
     doc_filename = os.path.join(file_dir, spec_output_doc_filename)  # Name of the file where the main documentation goes
-    srcdoc_filename = os.path.join(file_dir, spec_output_src_filename ) if spec_generate_src_file else None  # Name fo the file where the source YAML/JSON of the specifications go
+    srcdoc_filename = os.path.join(file_dir, spec_output_src_filename ) if spec_generate_src_file else None  # Name fo the file where the source YAML of the specifications go
     master_filename = os.path.join(file_dir, spec_output_master_filename)
     type_hierarchy_doc_filename = os.path.join(file_dir, spec_output_doc_type_hierarchy_filename)
     core_namespace_file = os.path.join(spec_dir, spec_input_namespace_filename)
@@ -1367,7 +1305,6 @@ def main():
                      namespace_name=spec_input_default_namespace,
                      desc_doc=desc_doc,
                      src_doc=src_doc,
-                     show_json_src=spec_show_json_src,
                      show_yaml_src=spec_show_yaml_src,
                      file_dir=file_dir,
                      file_per_type=spec_file_per_type,
@@ -1398,7 +1335,6 @@ def main():
                      src_doc=src_doc,
                      file_dir=file_dir,
                      show_hierarchy_plots=spec_show_hierarchy_plots,
-                     show_json_src=spec_show_json_src,
                      show_yaml_src=spec_show_yaml_src,
                      file_per_type=spec_file_per_type)
         sec_index += 1
