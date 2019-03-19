@@ -37,34 +37,6 @@ class PrintHelper:
         indent_str = indent_step * indent
         print(col + indent_str + text + cls.ENDC)
 
-    @classmethod
-    def print_type_hierarchy(cls, type_hierarchy, depth=0, show_ancestry=False):
-        """
-        Helper function used to print a hierarchy of neurodata_types
-
-        :param show_ancestry: Boolean indicating whether the ancestry of a type should be included in the print
-        :param type_hierarchy: OrderedDict containtin for each type a dict with the 'spec' and OrderedDict of 'substype'
-        :param depth: Recursion depth of the print used to indent the hierarchy
-        """
-        for k, v in type_hierarchy.items():
-            msg = k
-            if show_ancestry and len(v['ancestry']) > 0:
-                msg += '      ancestry=' + str(v['ancestry'])
-            cls.print(msg, cls.OKBLUE + cls.BOLD if depth == 0 else cls.OKBLUE, depth)
-            cls.print_type_hierarchy(v['subtypes'], depth=depth+1, show_ancestry=show_ancestry)
-
-    @classmethod
-    def print_sections(cls, type_sections):
-        """
-        Helper function to print sorting of neurodata_type to sections
-
-        :param type_sections: OrderedDict of sections created by the function sort_type_hierarchy_to_sections(...)
-        :return:
-        """
-        for sec in type_sections:
-            cls.print(sec['title'], cls.OKBLUE+cls.BOLD)
-            cls.print(str(list(sec['neurodata_types'].keys())), cls.OKBLUE)
-
 
 ########################################################
 #  Internal helper classes
