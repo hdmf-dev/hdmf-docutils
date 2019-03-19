@@ -12,13 +12,12 @@ from __future__ import print_function
 import pynwb
 
 from hdmf.spec.spec import GroupSpec, DatasetSpec, LinkSpec, AttributeSpec, RefSpec
-from pynwb.spec import NWBGroupSpec, NWBDatasetSpec, NWBNamespace
 from hdmf.spec.namespace import NamespaceCatalog
 from collections import OrderedDict
 import warnings
 import os
 
-from .doctools.rstdoc import  RSTSectionLabelHelper as LabelHelper
+from .doctools.rstdoc import RSTSectionLabelHelper as LabelHelper
 from .doctools.rstdoc import RSTDocument, RSTTable
 from .doctools.output import PrintHelper, GitHashHelper
 
@@ -45,6 +44,31 @@ try:
         spec_output_doc_type_hierarchy_filename, \
         spec_input_namespace_filename, \
         spec_input_default_namespace
+    # Optional settings parameters set to defaults if setting is not available
+    try:
+        from conf_doc_autogen import spec_default_type_map
+    except ImportError:
+        warnings.warn("spec_default_type_map not set. Using None as default.")
+        spec_default_type_map = None
+    try:
+        from conf_doc_autogen import spec_group_spec_cls
+    except ImportError:
+        warnings.warn("spec_group_spec_cls not set. Using HDMF GroupSpec class as default.")
+        spec_group_spec_cls = GroupSpec
+    spec_type_key = spec_group_spec_cls.type_key()
+    spec_inc_key = spec_group_spec_cls.inc_key()
+    spec_def_key = spec_group_spec_cls.def_key()
+    try:
+        from conf_doc_autogen import spec_dataset_spec_cls
+    except ImportError:
+        warnings.warn("spec_dataset_spec_cls not set. Using HDMF DatasetSpec class as default.")
+        spec_dataset_spec_cls = DatasetSpec
+    try:
+        from conf_doc_autogen import spec_namespace_spec_cls
+    except ImportError:
+        warnings.warn("spec_namespace_spec_cls not set. Using HDMF SpecNamespace class as default.")
+        from hdmf.spec import SpecNamespace
+        spec_namespace_spec_cls = SpecNamespace
 except ImportError:
     print("Could not import SPHINX conf_doc_autogen.py file. Please add the PYTHONPATH to the source directory where the conf_doc_autogen.py file is located")
     exit(0)
@@ -87,16 +111,21 @@ class SchemaHelper(object):
         :return:
         """
         # Default load when documenting extensions
-        try:
-            type_map = pynwb.get_type_map()
-            type_map.load_namespaces(namespace_file)
-            namespace = type_map.namespace_catalog
-        # When renderning the core spec we'll get a KeyError because it already exists so we'll load the namespace separately
-        except KeyError:
+        namespace = None
+        if spec_default_type_map is not None:
+            try:
+                spec_default_type_map.load_namespaces(namespace_file, resolve=resolve)
+                namespace = spec_default_type_map.namespace_catalog
+            # When renderning the core spec we'll get a KeyError because it already exists
+            # so we'll load the namespace separately
+            except KeyError:
+               pass
+        # Load the namespace separately if it already exists or we don't have a default type map specified
+        if namespace is None:
             namespace = NamespaceCatalog(default_namespace,
-                                      group_spec_cls=NWBGroupSpec,
-                                      dataset_spec_cls=NWBDatasetSpec,
-                                      spec_namespace_cls=NWBNamespace)
+                                         group_spec_cls=spec_group_spec_cls,
+                                         dataset_spec_cls=spec_dataset_spec_cls,
+                                         spec_namespace_cls=spec_namespace_spec_cls)
             namespace.load_namespaces(namespace_file, resolve=resolve)
 
         default_spec_catalog = namespace.get_namespace(default_namespace).catalog
@@ -158,10 +187,12 @@ class SchemaHelper(object):
             return qdict[quantity]
 
     @staticmethod
-    def get_primitive_type(spec):
+    def get_primitive_spectype(spec):
         """
         Given a spec get a string indicating the primitive type of the spec
+
         :param spec: The spec object
+
         :return: String indicating the primitive type (e.g., Dataset, Group, Attribute, Link, Ref, etc.)
         """
         if isinstance(spec, GroupSpec):
@@ -178,15 +209,15 @@ class SchemaHelper(object):
             raise ValueError("Unknown specification object type")
 
     @staticmethod
-    def compute_neurodata_type_hierarchy(spec_catalog):
+    def compute_data_type_hierarchy(spec_catalog):
         """
-        Sort and group specifications based on their neurodata_type to compute the hierarchy of types
+        Sort and group specifications based on their data_type to compute the hierarchy of types
 
         :param spec_catalog: The catalog of specifications to be rendered
 
         :return:
             * `type_hierarchy` : Nested collection of OrderedDicts. The keys in the OrderedDicts are the
-                                 neurodata_type string. The values of are dicts with the following keys:
+                                 data_type string. The values are DataTypeDicts with the following keys:
                                  `spec` with the specification of the class, `ancestry` with a list of
                                  types the object inherits from, and `subtypes` with a nested OrderedDict
                                  describing the subtypes.
@@ -195,51 +226,22 @@ class SchemaHelper(object):
                                  a nested dict all types are part of the top-level dict.
 
         """
-        registered_types = sorted(spec_catalog.get_registered_types())
-        type_hierarchy = OrderedDict()
-        # spec_yaml = {rt: SpecFormatter.spec_to_yaml(spec_catalog.get_spec(rt)) for rt in registered_types}
-        #
-        # def embedded_in(spec_yaml, neurodata_type):
-        #     """
-        #     Determine whether the given neurodata_type is embedded in any other type, i.e.,
-        #     the type is specified in only one location and appears in appears in the YAML specification of that type.
-        #
-        #     :param neurodata_type:
-        #     :param spec_yaml
-        #     :return:
-        #     """
-        #     embedded = []
-        #     nt_spec = spec_yaml[neurodata_type]
-        #     for rt in registered_types:
-        #         rt_spec = spec_yaml[rt]
-        #         if nt_spec in rt_spec and nt_spec != rt_spec:
-        #             embedded.append(rt)
-        #     return embedded
-
-        def find_subtypes(spec_catalog, registered_types, neurodata_type, ancestry):
+        def find_subtypes(spec_catalog, registered_types, data_type, ancestry):
             """
-            Find all types that inherit from the given type
+            Recursively find all subtypes that inherit from the given type
             """
             subtypes = OrderedDict()
             for rt in registered_types:
                 rt_spec = spec_catalog.get_spec(rt)
-                if rt_spec.get('neurodata_type_inc', None) == neurodata_type  and rt_spec.get('neurodata_type_def', None) != neurodata_type:
-                    subtypes[rt] = NeurodataTypeDict(neurodata_type=rt,
-                                                     spec=rt_spec,
-                                                     ancestry=ancestry,
-                                                     subtypes=find_subtypes(spec_catalog,
+                if rt_spec.get(spec_inc_key, None) == data_type  and rt_spec.get(spec_def_key, None) != data_type:
+                    subtypes[rt] = DataTypeDict(data_type=rt,
+                                                spec=rt_spec,
+                                                ancestry=ancestry,
+                                                subtypes=find_subtypes(spec_catalog,
                                                                             registered_types,
                                                                             rt,
                                                                             ancestry + [rt,]))
             return subtypes
-
-        for rt in registered_types:
-            rt_spec = spec_catalog.get_spec(rt)
-            if rt_spec.get('neurodata_type_inc', None) is None:
-                type_hierarchy[rt] = NeurodataTypeDict(neurodata_type=rt,
-                                                       spec=spec_catalog.get_spec(rt),
-                                                       ancestry=[],
-                                                       subtypes=find_subtypes(spec_catalog, registered_types, rt, [rt]))
 
         def flatten_hierarchy(type_hierarchy, flat_type_hierarchy):
             """
@@ -254,16 +256,31 @@ class SchemaHelper(object):
                 flatten_hierarchy(v['subtypes'], flat_type_hierarchy)
             return flat_type_hierarchy
 
+
+        # Get the list of all types
+        registered_types = sorted(spec_catalog.get_registered_types())
+        type_hierarchy = OrderedDict()
+
+        # Compute the type hierarchy
+        for rt in registered_types:
+            rt_spec = spec_catalog.get_spec(rt)
+            if rt_spec.get(spec_inc_key, None) is None:
+                type_hierarchy[rt] = DataTypeDict(data_type=rt,
+                                                  spec=spec_catalog.get_spec(rt),
+                                                  ancestry=[],
+                                                  subtypes=find_subtypes(spec_catalog, registered_types, rt, [rt]))
+
+        # Compute the flattened type hierarchy
         flat_type_hierarchy = flatten_hierarchy(type_hierarchy, OrderedDict())
 
         # Check that we actually included all the types. If the above code is correct, we should have captured all types.
         for rt in registered_types:
             if rt not in flat_type_hierarchy:
                 PrintHelper.print('ERROR -- Type missing in type hierarchy. Adding it as a basetype: %s' % rt, PrintHelper.FAIL)
-                type_hierarchy[rt] = NeurodataTypeDict(neurodata_type=rt,
-                                                       spec=spec_catalog.get_spec(rt),
-                                                       ancestry=[],
-                                                       subtypes=OrderedDict())
+                type_hierarchy[rt] = DataTypeDict(data_type=rt,
+                                                  spec=spec_catalog.get_spec(rt),
+                                                  ancestry=[],
+                                                  subtypes=OrderedDict())
                 flat_type_hierarchy[rt] = type_hierarchy[rt]
 
         return type_hierarchy, flat_type_hierarchy
@@ -273,8 +290,8 @@ class SchemaHelper(object):
         """
         From the type hierarchy create a list with descriptions of how to organize the types into sections
 
-        :param type_hierarchy: The input type hierarchy as compute by compute_neurodata_type_hierarchy
-        :return: List of NeurodataTypeSections
+        :param type_hierarchy: The input type hierarchy as compute by compute_data_type_hierarchy
+        :return: List of DataTypeSections
 
 
         """
@@ -284,7 +301,7 @@ class SchemaHelper(object):
         def get_list_of_subtypes(spec, subtypes=None, include_main_type=True, exclude=None):
             """Compile an OrderedDict of all objects of a given type
 
-            :param spec: Select spec computed via compute_neurodata_type_hierarchy(..)
+            :param spec: Select DataTypeDict object (computed via compute_data_type_hierarchy(..))
             :param subtypes: OrderedDict with already detected subtypes. Used for recursive detection of types.
                              Usually just left as None.
             :param include_main_type: Boolean indicating whether the main type given by spec should be added to the list.
@@ -293,7 +310,7 @@ class SchemaHelper(object):
             if subtypes is None:
                 subtypes = OrderedDict()
                 if include_main_type:
-                    subtypes[spec['neurodata_type']] = spec
+                    subtypes[spec['data_type']] = spec
             for k, v in spec['subtypes'].items():
                 if exclude is None or k not in exclude:
                     subtypes[k] = v
@@ -317,7 +334,7 @@ class SchemaHelper(object):
                               PrintHelper.FAIL)
             nwb_file_subtypes = {}
         if len(nwb_file_subtypes) > 0:
-            sections.append(NeurodataTypeSection('Main Data File', nwb_file_subtypes))
+            sections.append(DataTypeSection('Main Data File', nwb_file_subtypes))
             for k in nwb_file_subtypes.keys():
                 all_types[k] = True
 
@@ -332,7 +349,7 @@ class SchemaHelper(object):
                               PrintHelper.FAIL)
             nwb_base_types = {}
         if len(nwb_base_types) > 0:
-            sections.append(NeurodataTypeSection('Base Types', nwb_base_types))
+            sections.append(DataTypeSection('Base Types', nwb_base_types))
             for k in nwb_base_types.keys():
                 all_types[k] = True
 
@@ -344,7 +361,7 @@ class SchemaHelper(object):
                               PrintHelper.FAIL)
             time_series_subtypes = {}
         if len(time_series_subtypes) > 0:
-            sections.append(NeurodataTypeSection('TimeSeries Types', sort_types(time_series_subtypes)))
+            sections.append(DataTypeSection('TimeSeries Types', sort_types(time_series_subtypes)))
             for k in time_series_subtypes.keys():
                 all_types[k] = True
 
@@ -368,7 +385,7 @@ class SchemaHelper(object):
                 if not all_types[k]:  # Avoid duplicate listing of types
                     data_processing_types[k] = v
                     all_types[k] = True
-            sections.append(NeurodataTypeSection('Data Processing', sort_types(data_processing_types)))
+            sections.append(DataTypeSection('Data Processing', sort_types(data_processing_types)))
 
         # Base types get their own section
         try:
@@ -384,18 +401,18 @@ class SchemaHelper(object):
                               PrintHelper.FAIL)
             nwb_primitive_types = {}
         if len(nwb_primitive_types) > 0:
-            sections.append(NeurodataTypeSection('Primitive Types and Data Structures', nwb_primitive_types))
+            sections.append(DataTypeSection('Primitive Types and Data Structures', nwb_primitive_types))
             for k in nwb_primitive_types.keys():
                 all_types[k] = True
 
 
-        # Section for all other neurodata types that have not been sorted into the hierarchy yet.
+        # Section for all other data types that have not been sorted into the hierarchy yet.
         other_types = OrderedDict()
         for k, v in all_types.items():
             if not v:
                 other_types[k] = v
         if len(other_types) > 0:
-            sections.append(NeurodataTypeSection('Other Types', sort_types(other_types)))
+            sections.append(DataTypeSection('Other Types', sort_types(other_types)))
             for k in other_types:
                 all_types[k] = True
 
@@ -407,34 +424,62 @@ class SchemaHelper(object):
         # Return the list of our sections
         return sections
 
+    @staticmethod
+    def print_type_hierarchy(type_hierarchy, depth=0, show_ancestry=False):
+        """
+        Helper function used to print a hierarchy of data_types
+
+        :param show_ancestry: Boolean indicating whether the ancestry of a type should be included in the print
+        :param type_hierarchy: OrderedDict containtin for each type a dict with the 'spec' and OrderedDict of 'substype'
+        :param depth: Recursion depth of the print used to indent the hierarchy
+        """
+        for k, v in type_hierarchy.items():
+            msg = k
+            if show_ancestry and len(v['ancestry']) > 0:
+                msg += '      ancestry=' + str(v['ancestry'])
+            PrintHelper.print(msg, PrintHelper.OKBLUE + PrintHelper.BOLD if depth == 0 else PrintHelper.OKBLUE, depth)
+            SchemaHelper.print_type_hierarchy(v['subtypes'], depth=depth+1, show_ancestry=show_ancestry)
+
+    @staticmethod
+    def print_sections(type_sections):
+        """
+        Helper function to print sorting of data_type to sections
+
+        :param type_sections: OrderedDict of sections created by the function sort_type_hierarchy_to_sections(...)
+        :return:
+        """
+        for sec in type_sections:
+            PrintHelper.print(sec['title'], PrintHelper.OKBLUE+PrintHelper.BOLD)
+            PrintHelper.print(str(list(sec['data_types'].keys())), PrintHelper.OKBLUE)
+
 
 
 ########################################################
 #  Internal dictionary data structures
 ########################################################
-class NeurodataTypeDict(dict):
-    """Dict used to describe a neurodata type"""
-    def __init__(self, neurodata_type, spec, ancestry, subtypes):
-        self['neurodata_type'] = neurodata_type
+class DataTypeDict(dict):
+    """Dict used to describe a data type"""
+    def __init__(self, data_type, spec, ancestry, subtypes):
+        self['data_type'] = data_type
         self['spec'] = spec
         self['ancestry'] = ancestry
         self['subtypes'] = subtypes
 
 
-class NeurodataTypeSection(dict):
+class DataTypeSection(dict):
     """
-    Dict describing a set of neurodata_types that should be grouped in a section in the documentation
+    Dict describing a set of data_types that should be grouped in a section in the documentation
     """
-    def __init__(self, title, neurodata_types=None, intro=None):
+    def __init__(self, title, data_types=None, intro=None):
         """
 
         :param title: String with the title of the section
-        :param neurodata_types: None or OrderedDict where the keys are neurodata_types and the values
-                                are NeurodataTypeDict
+        :param data_types: None or OrderedDict where the keys are data_types and the values
+                                are DataTypeDict
         :param intro: None or RSTDocument with introductory text for the section.
         """
         self['title'] = title
-        self['neurodata_types'] = OrderedDict() if neurodata_types is None else neurodata_types
+        self['data_types'] = OrderedDict() if data_types is None else data_types
         self['intro'] = intro
 
 
@@ -492,13 +537,13 @@ class RenderDocsHelper(object):
             spec_prop_list.append('**Target Type** %s' % RSTDocument.get_reference(LabelHelper.get_section_label(spec['target_type']), spec['target_type']))
         # Add dataset properties
         if isinstance(spec, DatasetSpec):
-            if spec.get('neurodata_type_def', None) is not None and 'neurodata_type_def' not in ignore_keys:
-                spec_prop_list.append('**Neurodata Type:** %s' % str(spec['neurodata_type_def']))
-            if spec.get('neurodata_type_inc', None) is not None and 'neurodata_type_inc' not in ignore_keys:
-                extend_type = str(spec['neurodata_type_inc'])
+            if spec.get(spec_def_key, None) is not None and spec_def_key not in ignore_keys:
+                spec_prop_list.append('**Neurodata Type:** %s' % str(spec[spec_def_key]))
+            if spec.get(spec_inc_key, None) is not None and spec_inc_key not in ignore_keys:
+                extend_type = str(spec[spec_inc_key])
                 spec_prop_list.append('**Extends:** %s' %  RSTDocument.get_reference(LabelHelper.get_section_label(extend_type), extend_type))
             if 'primitive_type' not in ignore_keys:
-                spec_prop_list.append('**Primitive Type:** %s' %  SchemaHelper.get_primitive_type(spec))
+                spec_prop_list.append('**Primitive Type:** %s' % SchemaHelper.get_primitive_spectype(spec))
             if spec.get('quantity', None) is not None and 'quantity' not in ignore_keys:
                 spec_prop_list.append('**Quantity:** %s' % SchemaHelper.quantity_to_string(spec['quantity']))
             if spec.get('dtype', None) is not None and 'dtype' not in ignore_keys:
@@ -511,14 +556,14 @@ class RenderDocsHelper(object):
                 spec_prop_list.append('**Linkable:** %s' % str(spec['linkable']))
         # Add group properties
         if isinstance(spec, GroupSpec):
-            if spec.get('neurodata_type_def', None) is not None and 'neurodata_type_def' not in ignore_keys:
-                ntype = str(spec['neurodata_type_def'])
+            if spec.get(spec_def_key, None) is not None and spec_def_key not in ignore_keys:
+                ntype = str(spec[spec_def_key])
                 spec_prop_list.append('**Neurodata Type:** %s' % RSTDocument.get_reference(LabelHelper.get_section_label(ntype), ntype))
-            if spec.get('neurodata_type_inc', None) is not None and 'neurodata_type_inc' not in ignore_keys:
-                extend_type = str(spec['neurodata_type_inc'])
+            if spec.get(spec_inc_key, None) is not None and spec_inc_key not in ignore_keys:
+                extend_type = str(spec[spec_inc_key])
                 spec_prop_list.append('**Extends:** %s' %  RSTDocument.get_reference(LabelHelper.get_section_label(extend_type), extend_type))
             if 'primitive_type' not in ignore_keys:
-                spec_prop_list.append('**Primitive Type:** %s' %  SchemaHelper.get_primitive_type(spec))
+                spec_prop_list.append('**Primitive Type:** %s' % SchemaHelper.get_primitive_spectype(spec))
             if spec.get('quantity', None) is not None and 'quantity' not in ignore_keys:
                 spec_prop_list.append('**Quantity:** %s' % SchemaHelper.quantity_to_string(spec['quantity']))
             if spec.get('linkable', None) is not None and 'linkable' not in ignore_keys:
@@ -526,7 +571,7 @@ class RenderDocsHelper(object):
         # Add attribute spec properites
         if isinstance(spec, AttributeSpec):
             if 'primitive_type' not in ignore_keys:
-                spec_prop_list.append('**Primitive Type:** %s' %  SchemaHelper.get_primitive_type(spec))
+                spec_prop_list.append('**Primitive Type:** %s' % SchemaHelper.get_primitive_spectype(spec))
             if spec.get('dtype', None) is not None and 'dtype' not in ignore_keys:
                 spec_prop_list.append('**Data Type:** %s' % RenderDocsHelper.render_data_type(spec['dtype']))
             if spec.get('dims', None) is not None  and 'dims' not in ignore_keys:
@@ -579,7 +624,7 @@ class RenderDocsHelper(object):
         :param namespace_name: Name of the namespace to be rendered. Set to None if the default namespace should be used
         :param show_yaml_src: Boolean indicating that we should render the YAML source in the src_doc
         :param file_dir: Directory where output RST docs should be stored. Required if file_per_type is True.
-        :param file_per_type: Generate a seperate rst files for each neurodata_type and include them
+        :param file_per_type: Generate a seperate rst files for each data_type and include them
                               in the src_doc and desc_doc (True). If set to False then write the
                               contents to src_doc and desc_doc directly.
         :param type_hierarchy_include: Optional include file with the hierarchy of types in the namespace
@@ -697,7 +742,7 @@ class RenderDocsHelper(object):
     @staticmethod
     def render_type_hierarchy(type_hierarchy,
                               target_doc=None,
-                              section_label='neurodata_type_hierarchy',
+                              section_label='data_type_hierarchy',
                               subsection_title='Type Hierarchy'):
         """
         Render the flattened type hierarhcy
@@ -719,7 +764,7 @@ class RenderDocsHelper(object):
 
         def add_sub_hierarchy(outdoc, type_hierarchy, depth=0, show_ancestry=False, indent_step='   '):
             """
-            Helper function used to print a hierarchy of neurodata_types
+            Helper function used to print a hierarchy of data_types
             :param type_hierarchy: OrderedDict containtin for each type a dict with the 'spec' and OrderedDict of 'substype'
             :param depth: Recursion depth of the print used to indent the hierarchy
             """
@@ -781,14 +826,14 @@ class RenderDocsHelper(object):
         depth_str = spec_table_depth_char * depth
         if spec.get('name', None) is not None:
             spec_name = depth_str + spec.name
-        elif spec.get('neurodata_type_def',None) is not None:
-            spec_name = depth_str +  '<%s>' % spec.neurodata_type_def
+        elif spec.get(spec_def_key,None) is not None:
+            spec_name = depth_str +  '<%s>' % spec[spec_def_key]
         elif spec_type == 'link':
-            spec_name = depth_str +  '<%s>' % RSTDocument.get_reference(LabelHelper.get_section_label(spec.data_type_inc), spec.data_type_inc)
-        elif spec.get('neurodata_type_inc', None) is not None:
-            spec_name = depth_str +  '<%s>' % RSTDocument.get_reference(LabelHelper.get_section_label(spec.neurodata_type_inc), spec.neurodata_type_inc)
+            spec_name = depth_str +  '<%s>' % RSTDocument.get_reference(LabelHelper.get_section_label(spec[spec_inc_key]), spec[spec_inc_key])
+        elif spec.get(spec_inc_key, None) is not None:
+            spec_name = depth_str +  '<%s>' % RSTDocument.get_reference(LabelHelper.get_section_label(spec[spec_inc_key]), spec[spec_inc_key])
         else:
-            spec_name = depth_str +  '<%s>' % RSTDocument.get_reference(LabelHelper.get_section_label(spec.neurodata_type), spec.neurodata_type)
+            spec_name = depth_str +  '<%s>' % RSTDocument.get_reference(LabelHelper.get_section_label(spec[spec_type_key]), spec[spec_type_key])
         spec_quantity = SchemaHelper.quantity_to_string(spec.quantity) \
                         if not (isinstance(spec, AttributeSpec) or isinstance(spec, LinkSpec)) \
                         else ""
@@ -852,10 +897,10 @@ class RenderDocsHelper(object):
         group_name = ''
         if group_spec.get('name', None) is not None:
             group_name = group_spec.name
-        elif group_spec.get('neurodata_type_def', None) is not None:
-            group_name = "<%s>" % group_spec.neurodata_type_def
-        elif group_spec.get('neurodata_type_inc', None) is not None:
-            group_name =  "<%s>" % group_spec.neurodata_type_inc
+        elif group_spec.get(spec_def_key, None) is not None:
+            group_name = "<%s>" % group_spec[spec_def_key]
+        elif group_spec.get(spec_inc_key, None) is not None:
+            group_name =  "<%s>" % group_spec[spec_inc_key]
         else:
             warnings.warn("Could not determine name for group %s" % str(group_spec))
         if group_name == '':
@@ -916,7 +961,7 @@ class RenderDocsHelper(object):
             RenderDocsHelper.render_group_specs(sg, rst_doc, parent=parent+group_name+'/')
 
     @staticmethod
-    def render_specs(neurodata_types,
+    def render_specs(data_types,
                      spec_catalog,
                      desc_doc,
                      src_doc,
@@ -925,18 +970,18 @@ class RenderDocsHelper(object):
                      show_yaml_src=True,
                      file_per_type=False):
         """
-        Render the documentation for a set of neurodata_types defined in a spec_catalog
+        Render the documentation for a set of data_types defined in a spec_catalog
 
-        :param neurodata_types: List of string with the names of types that should be rendered or OrderedDict where
-                              the keys are neurodata_type strings and the values are NeurodataTypeDict
+        :param data_types: List of string with the names of types that should be rendered or OrderedDict where
+                           the keys are data_type strings and the values are DataTypeDict
         :param spec_catalog: Catalog of specifications
         :param desc_doc: RSTDocument where the descriptions of the documents should be rendered
-        :param src_doc: RSTDocument where the YAML sources of the neurodata_types should be rendered. Set to None
+        :param src_doc: RSTDocument where the YAML sources of the data_types should be rendered. Set to None
                         if sources should be rendered in the desc_doc directly.
         :param file_dir: Directory where figures and outpy RST docs should be stored
         :param show_hierarchy_plots: Create figures showing the hierarchy defined by the spec
         :param show_yaml_src: Boolean indicating that we should render the YAML source in the src_doc
-        :param file_per_type: Generate a seperate rst files for each neurodata_type and include them
+        :param file_per_type: Generate a seperate rst files for each data_type and include them
                               in the src_doc and desc_doc (True). If set to False then write the
                               contents to src_doc and desc_doc directly.
 
@@ -947,12 +992,12 @@ class RenderDocsHelper(object):
         else:
             seperate_src_file = True
 
-        for rt in neurodata_types:
+        for rt in data_types:
             print("BUILDING %s" % rt)
             # Get the spec
             rt_spec = spec_catalog.get_spec(rt)
             # Check if the spec extends another spec
-            extend_type =   rt_spec.get('neurodata_type_inc', None)
+            extend_type =   rt_spec.get(spec_inc_key, None)
             # Define the docs we need to write to
             type_desc_doc = desc_doc if not file_per_type else RSTDocument()
             type_src_doc  = src_doc if not file_per_type else RSTDocument()
@@ -965,7 +1010,7 @@ class RenderDocsHelper(object):
             section_heading = rt # if extend_type is None else "%s extends %s" % (rt, type_desc_doc.get_reference(LabelHelper.get_section_label(extend_type), extend_type))
             type_desc_doc.add_subsubsection(section_heading)
             type_desc_doc.add_text('**Overview:** ')# + type_desc_doc.newline + type_desc_doc.newline)
-            # Add the document string for the neurodata_type to the document
+            # Add the document string for the data_type to the document
             rt_clean_doc = SchemaHelper.clean_schema_doc_string(rt_spec['doc'],
                                                    add_prefix=type_desc_doc.newline+type_desc_doc.newline,
                                                    add_postifix=type_desc_doc.newline,
@@ -974,7 +1019,7 @@ class RenderDocsHelper(object):
             type_desc_doc.add_text(type_desc_doc.newline + type_desc_doc.newline)
             # Add note if necessary to indicate that the following documentation only shows changes to the parent class
             if extend_type is not None:
-                extend_type =  rt_spec['neurodata_type_inc']
+                extend_type =  rt_spec[spec_inc_key]
                 sentence_end = " with the following additions or changes." \
                     if not spec_resolve_type_inc \
                     else ". The following is a description of the complete structure of ``%s`` including all inherited components." % rt
@@ -995,7 +1040,7 @@ class RenderDocsHelper(object):
 
             type_desc_doc.add_text(RenderDocsHelper.render_specification_properties(rt_spec,
                                                                             type_desc_doc.newline,
-                                                                            ignore_props=['neurodata_type_def', 'default_name', 'name'],
+                                                                            ignore_props=[spec_def_key, 'default_name', 'name'],
                                                                             append_items=additional_props))
             type_desc_doc.add_text(type_desc_doc.newline)
 
@@ -1058,7 +1103,7 @@ class RenderDocsHelper(object):
                 type_src_doc.add_spec(rt_spec)
 
             #############################################################################
-            #  Add table with dataset and attribute descriptions for the neurodata_type
+            #  Add table with dataset and attribute descriptions for the data_type
             ############################################################################
             type_desc_doc.add_text(type_desc_doc.newline)
             rt_spec_data_table = RenderDocsHelper.create_spec_table(rt_spec,
@@ -1078,7 +1123,7 @@ class RenderDocsHelper(object):
                                         latex_tablecolumns=CUSTOM_LATEX_TABLE_COLUMNS)
 
             #############################################################################
-            #  Add table with the main subgroups for the neurodata_type
+            #  Add table with the main subgroups for the data_type
             ############################################################################
             if spec_show_subgroups_in_seperate_table:
                 type_desc_doc.add_text(type_desc_doc.newline)
@@ -1177,14 +1222,13 @@ def main():
     # Generate the hierarchy of types
     print("BUILDING TYPE HIERARCHY")
     registered_types = spec_catalog.get_registered_types()
-    type_hierarchy, flat_type_hierarchy = SchemaHelper.compute_neurodata_type_hierarchy(spec_catalog)
-    PrintHelper.print_type_hierarchy(type_hierarchy, show_ancestry=False)
+    type_hierarchy, flat_type_hierarchy = SchemaHelper.compute_data_type_hierarchy(spec_catalog)
+    SchemaHelper.print_type_hierarchy(type_hierarchy, show_ancestry=False)
 
     # Sorting types into sections
     print("SORTING TYPES INTO SECTIONS")
     type_sections = SchemaHelper.sort_type_hierarchy_to_sections(type_hierarchy, registered_types)
-    PrintHelper.print_sections(type_sections)
-
+    SchemaHelper.print_sections(type_sections)
 
     # Create the documentation RST file
     desc_doc =  RSTDocument()
@@ -1240,14 +1284,14 @@ def main():
             src_doc.add_subsection(sec['title'])
 
         # Render all registered documents for the current section
-        RenderDocsHelper.render_specs(neurodata_types=sec['neurodata_types'],    #sorted(registered_types),
+        RenderDocsHelper.render_specs(data_types=sec['data_types'],  #sorted(registered_types),
                      spec_catalog=spec_catalog,
-                     desc_doc=desc_doc,
-                     src_doc=src_doc,
-                     file_dir=file_dir,
-                     show_hierarchy_plots=spec_show_hierarchy_plots,
-                     show_yaml_src=spec_show_yaml_src,
-                     file_per_type=spec_file_per_type)
+                                      desc_doc=desc_doc,
+                                      src_doc=src_doc,
+                                      file_dir=file_dir,
+                                      show_hierarchy_plots=spec_show_hierarchy_plots,
+                                      show_yaml_src=spec_show_yaml_src,
+                                      file_per_type=spec_file_per_type)
         sec_index += 1
 
     #######################################
