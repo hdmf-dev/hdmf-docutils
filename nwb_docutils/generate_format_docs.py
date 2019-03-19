@@ -77,7 +77,7 @@ try:
     # make sure that we can import pyplot an networkX
     from matplotlib import pyplot as plt
     import networkx
-    from .render import NXGraphHierarchyDescription, HierarchyDescription
+    from .doctools.render import NXGraphHierarchyDescription, HierarchyDescription
     # If all the imports worked then we can render the plots
     INCLUDE_GRAPHS = True
 except ImportError:
