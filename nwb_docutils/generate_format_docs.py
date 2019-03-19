@@ -18,8 +18,10 @@ from collections import OrderedDict
 import warnings
 import os
 
-from .rst.rstdoc import  RSTSectionLabelHelper as LabelHelper
-from .rst.rstdoc import RSTDocument, RSTTable
+from .doctools.rstdoc import  RSTSectionLabelHelper as LabelHelper
+from .doctools.rstdoc import RSTDocument, RSTTable
+from .doctools.output import PrintHelper, GitHashHelper
+
 
 # Import settings from the configuration file
 try:
@@ -173,7 +175,7 @@ class SchemaHelper(object):
         elif isinstance(spec, RefSpec):
             return 'Ref'
         else:
-            raise ValueError("Unknown specificaion object type")
+            raise ValueError("Unknown specification object type")
 
     @staticmethod
     def compute_neurodata_type_hierarchy(spec_catalog):
@@ -405,97 +407,6 @@ class SchemaHelper(object):
         # Return the list of our sections
         return sections
 
-
-########################################################
-#  Internal helper classes
-########################################################
-class GitHashHelper(object):
-    """
-    Helper class for retrieving and comparing git hashes for a repo.
-    """
-
-    @classmethod
-    def get_git_revision_hash(cls):
-        """
-        Helper function used to retrieve the git hash from the repo
-
-        :return: String with the git hash
-        """
-        import subprocess
-        return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-
-    @classmethod
-    def git_hash_match(cls, hashfilename):
-        """
-        Helper function used to check if the current git hash matches the version of the files
-
-        :return: True if match
-        """
-        if os.path.exists(hashfilename):
-            f = open(hashfilename, 'rb')
-            prev_hash = f.read()
-            f.close()
-            curr_hash = cls.get_git_revision_hash()
-            return curr_hash == prev_hash
-        else:
-            return False
-
-class PrintHelper:
-    """
-    Helper functions used for printing color-coded progress and status messages.
-    """
-
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[32m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    ITALIC = '\33[1m'
-    URL      = '\33[4m'
-    BLINK    = '\33[5m'
-    BLINK2   = '\33[6m'
-    SELECTED = '\33[7m'
-
-    @classmethod
-    def print(cls, text, col, indent=0, indent_step='   '):
-        """
-
-        :param text: The text to be printed
-        :param col: One of PrintHelper.HEADER, OKBLUE etc.
-        :return:
-        """
-        indent_str = indent_step * indent
-        print(col + indent_str + text + cls.ENDC)
-
-    @classmethod
-    def print_type_hierarchy(cls, type_hierarchy, depth=0, show_ancestry=False):
-        """
-        Helper function used to print a hierarchy of neurodata_types
-
-        :param type_hierarchy: OrderedDict containtin for each type a dict with the 'spec' and OrderedDict of 'substype'
-        :param depth: Recursion depth of the print used to indent the hierarchy
-        """
-        for k, v in type_hierarchy.items():
-            msg = k
-            if show_ancestry and len(v['ancestry']) > 0:
-                msg += '      ancestry=' + str(v['ancestry'])
-            cls.print(msg, cls.OKBLUE+cls.BOLD if depth==0 else cls.OKBLUE, depth)
-            cls.print_type_hierarchy(v['subtypes'], depth=depth+1, show_ancestry=show_ancestry)
-
-    @classmethod
-    def print_sections(cls, type_sections):
-        """
-        Helper function to print sorting of neurodata_type to sections
-
-        :param type_sections: OrderedDict of sections created by the function sort_type_hierarchy_to_sections(...)
-        :return:
-        """
-        for sec in type_sections:
-            cls.print(sec['title'], cls.OKBLUE+cls.BOLD)
-            cls.print(str(list(sec['neurodata_types'].keys())), cls.OKBLUE)
 
 
 ########################################################
