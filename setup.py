@@ -4,7 +4,7 @@ import versioneer
 
 from setuptools import setup, find_packages
 
-with open('README.rst', 'r') as fp:
+with open('README.doctools', 'r') as fp:
     readme = fp.read()
 
 
@@ -14,7 +14,7 @@ setup_args = {
     'cmdclass': versioneer.get_cmdclass(),
     'description': 'Collection of CLIs, scripts and modules useful to generate the NWB documentation',
     'long_description': readme,
-    'long_description_content_type': 'text/x-rst; charset=UTF-8',
+    'long_description_content_type': 'text/x-doctools; charset=UTF-8',
     'author': 'Oliver Ruebel',
     'author_email': 'oruebel@lbl.gov',
     'url': 'https://github.com/NeurodataWithoutBorders/nwb-docutils',
@@ -23,6 +23,7 @@ setup_args = {
         'matplotlib',
         'networkx',
         'pynwb',
+        'hdmf',
         'pillow',
         'sphinx==1.6.5',
         'sphinx-gallery',
