@@ -274,6 +274,7 @@ def get_custom_settings(utils_dir,
                         table_depth_char='.',
                         latex_clearpage_after_type=True,
                         resolve_type_inc=False,
+                        add_pynwb_settings=True,
                         **kwargs   # These are just consumed but not used. This is just a simple trick to allow us to just hand in the arguments from the command line parser directly without having to specify all the argument by hand
                         ):
     """
@@ -456,7 +457,8 @@ spec_resolve_type_inc = %s
        str(resolve_type_inc))
 
     # Add specification class settings specific for NWB
-    custom_autodoc_settings += \
+    if add_pynwb_settings:
+        custom_autodoc_settings += \
 """
 # Default type map to be used. This is the type map where dependent namespaces are stored. In the case of
 # NWB this is spec_default_type_map = pynwb.get_type_map()
@@ -743,6 +745,8 @@ def define_cl_args():
                         help="Name of the custom RST file where further text for release notes for the extension should be added. If not set then the custom release_notes section will be omitted.")
     parser.add_argument('--external_release_notes', dest='external_release_notes', action='store', type=str, required=False, default=None,
                         help='Path to the rst file that should be included via a reference in the release notes documentation. Typically this file will be provided alongside with the spec_dir.')
+    parser.add_argument('--add_pynwb_settings', dest='add_pynwb_settings', action='store', type=bool_type, required=False, default=True,
+                        help="Add NWB:N specific settings to use the PyNWB spec classes and type map by to get access to the NWB:N core.")
     return parser
 
 
