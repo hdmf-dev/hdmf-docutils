@@ -8,9 +8,6 @@ Generate figures and RST documents from the NWB YAML specification for the forma
 # Python 2/3 compatibility
 from __future__ import print_function
 
-
-import pynwb
-
 from hdmf.spec.spec import GroupSpec, DatasetSpec, LinkSpec, AttributeSpec, RefSpec
 from hdmf.spec.namespace import NamespaceCatalog
 from collections import OrderedDict
