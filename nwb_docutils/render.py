@@ -2,9 +2,9 @@
 Module with classes for rendering specifications and object hierarchies
 """
 from hdmf.spec.spec import AttributeSpec, LinkSpec
-from pynwb.spec import NWBGroupSpec as GroupSpec
-from pynwb.spec import NWBDatasetSpec as DatasetSpec
-from pynwb.core import docval, getargs
+from hdmf.spec import GroupSpec
+from hdmf.spec import DatasetSpec
+from hdmf.utils import docval, getargs
 import warnings
 
 
@@ -20,7 +20,7 @@ class HierarchyDescription(dict):
     by the full path to the object plus the actual name or type of the object.
 
     TODO Instead of using our own dict datastructures to describe datasets, groups etc. we should use
-         the standard spec datastructures provided by PyNWB.
+         the standard spec datastructures provided by HDMF
     """
     RELATIONSHIP_TYPES = {'managed_by': 'Object managed by',
                           'link': 'Object links to',
@@ -37,34 +37,33 @@ class HierarchyDescription(dict):
     def __setitem__(self, key, value):
         raise ValueError("Explicit setting of objects not allowed. Use the add_* functions to add objects")
 
-    def add_dataset(self, name, shape=None, dtype=None, neurodata_type=None, size=None):
+    def add_dataset(self, name, shape=None, dtype=None, data_type=None, size=None):
         """
         Add a dataset to the description
 
         :param name: Name of the dataset (full path)
         :param shape: Shape of the dataset
         :param dtype: Data type of the data
-        :param neurodata_type: NWB neurodata_type
+        :param data_type: object data_type (e.g, NWB neurodata_type)
         """
         self['datasets'].append({
             'name': name,
             'shape': shape,
             'dtype': dtype,
-            'neurodata_type': neurodata_type,
+            'data_type': data_type,
             'size': size
-
         })
 
-    def add_group(self, name, neurodata_type=None):
+    def add_group(self, name, data_type=None):
         """
         Add a group to the description
 
         :param name: Name of the group (full path)
-        :param neurodata_type: NWB neurodata type
+        :param data_type: object data type (e.g., NWB neurodata type)
         """
         self['groups'].append({
             'name': name,
-            'neurodata_type': neurodata_type
+            'data_type': data_type
         })
 
     def add_attribute(self,  name, value, size=None):
@@ -125,33 +124,39 @@ class HierarchyDescription(dict):
             :param obj: The spec for the object
             :param parent_name: String with the full path of the parent in the hierarchy
             """
+            type_def_key = obj.def_key() if hasattr(obj, 'def_key') else 'data_type'
+            type_inc_key = obj.inc_key() if hasattr(obj, 'inc_key') else 'data_type'
             obj_main_name = obj.name \
                 if obj.get('name', None) is not None \
-                else obj.get('neurodata_type_def', None) \
-                if obj.get('neurodata_type_def', None) is not None \
-                else obj.get('neurodata_type_inc', None) \
-                if obj.get('neurodata_type_inc', None) is not None \
+                else obj.get(type_def_key, None) \
+                if obj.get(type_def_key, None) is not None \
+                else obj.get(type_inc_key, None) \
+                if obj.get(type_inc_key, None) is not None \
                 else obj['target_type']
             if obj.get('name', None) is None:
                 obj_main_name = '<' + obj_main_name + '>'
             obj_name = os.path.join(parent_name, obj_main_name)
 
             if isinstance(obj, GroupSpec):
-                if obj.get('neurodata_type_def', None) is not None:
-                    nd = obj['neurodata_type_def']
+                type_def_key = obj.def_key()
+                type_inc_key = obj.inc_key()
+                if obj.get(type_def_key, None) is not None:
+                    nd = obj[type_def_key]
                 else:
-                    nd = obj.neurodata_type_inc
+                    nd = obj.get(type_inc_key, None)
                 specstats.add_group(name=obj_name,
-                                    neurodata_type=nd)
+                                    data_type=nd)
             elif isinstance(obj, DatasetSpec):
-                if obj.get('neurodata_type_def', None) is not None:
-                    nd = obj['neurodata_type_def']
+                type_def_key = obj.def_key()
+                type_inc_key = obj.inc_key()
+                if obj.get(type_def_key, None) is not None:
+                    nd = obj[type_def_key]
                 else:
-                    nd = obj.neurodata_type_inc
+                    nd = obj.get(type_inc_key, None)
                 specstats.add_dataset(name=obj_name,
                                       shape=obj.shape,
                                       dtype=obj['type'] if hasattr(obj, 'type') else None,
-                                      neurodata_type=nd)
+                                      data_type=nd)
             elif isinstance(obj, AttributeSpec):
                 specstats.add_attribute(name=obj_name,
                                         value=obj.value)
@@ -192,7 +197,7 @@ class HierarchyDescription(dict):
         return specstats
 
     @classmethod
-    def from_hdf5(cls, hdf_object, root='/'):
+    def from_hdf5(cls, hdf_object, root='/', data_type_attr_name='neurodata_type'):
         """
         Traverse the file to compute file object hierarchy data.
 
@@ -201,6 +206,9 @@ class HierarchyDescription(dict):
         :param root: String indicating the root object starting from which we should compute the file statistics.
                      Default value is "/", i.e., starting from the root itself
         :type root: String
+        :param data_type_attr_name: Name of the attribute in the HDF5 file reserved for storing the name of
+                                    object types, e.g., the neurodata_type in the case of NWB:N. Default is
+                                    'neurodata_type' with NWB in mind.
 
         :return: Instance of HierarchyDescription with the hierarchy of the objects
 
@@ -222,27 +230,27 @@ class HierarchyDescription(dict):
             # Group and dataset metadata
             if isinstance(obj, h5py.Dataset):
                 ntype=None
-                if 'neurodata_type' in obj.attrs.keys():
-                    ntype = obj.attrs['neurodata_type'][:]
+                if data_type_attr_name in obj.attrs.keys():
+                    ntype = obj.attrs[data_type_attr_name][:]
 
                 filestats.add_dataset(name=obj_name,
                                       shape=obj.shape,
                                       dtype=obj.dtype,
-                                      neurodata_type=ntype,
+                                      data_type=ntype,
                                       size=obj.size * obj.dtype.itemsize)
             elif isinstance(obj, h5py.Group):
                 ntype = None
-                if 'neurodata_type' in obj.attrs.keys():
-                    ntype = obj.attrs['neurodata_type'][:]
-                filestats.add_group(name=obj_name, neurodata_type=ntype)
+                if data_type_attr_name in obj.attrs.keys():
+                    ntype = obj.attrs[data_type_attr_name][:]
+                filestats.add_group(name=obj_name, data_type=ntype)
                 # visititems does not visit any links. We need to add them here
                 for objkey in obj.keys():
                     objval = obj.get(objkey, getlink=True)
                     if isinstance(objval, h5py.SoftLink) or isinstance(objval, h5py.ExternalLink):
                         try:
                             linktarget = obj[objkey]
-                            if 'neurodata_type' in linktarget.attrs.keys():
-                                targettype = linktarget.attrs['neurodata_type'][:]
+                            if data_type_attr_name in linktarget.attrs.keys():
+                                targettype = linktarget.attrs[data_type_attr_name][:]
                             else:
                                 targettype = str(type(linktarget))
                         except KeyError:
@@ -617,10 +625,10 @@ class NXGraphHierarchyDescription(object):
         fig = plt.figure(figsize=figsize)
         # List of object names
         all_nodes = graph.nodes(data=False)
-        n_names = {'typed_dataset': [i['name'] for i in data['datasets'] if i['neurodata_type'] is not None and i['name'] in all_nodes],
-                   'untyped_dataset': [i['name'] for i in data['datasets'] if i['neurodata_type'] is None and i['name'] in all_nodes],
-                   'typed_group': [i['name'] for i in data['groups'] if i['neurodata_type'] is not None and i['name'] in all_nodes],
-                   'untyped_group': [i['name'] for i in data['groups'] if i['neurodata_type'] is None and i['name'] in all_nodes],
+        n_names = {'typed_dataset': [i['name'] for i in data['datasets'] if i['data_type'] is not None and i['name'] in all_nodes],
+                   'untyped_dataset': [i['name'] for i in data['datasets'] if i['data_type'] is None and i['name'] in all_nodes],
+                   'typed_group': [i['name'] for i in data['groups'] if i['data_type'] is not None and i['name'] in all_nodes],
+                   'untyped_group': [i['name'] for i in data['groups'] if i['data_type'] is None and i['name'] in all_nodes],
                    'attribute': [i['name'] for i in data['attributes'] if i['name'] in all_nodes],
                    'link': [i['name'] for i in data['links'] if i['name'] in all_nodes]
                    }
