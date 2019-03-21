@@ -23,6 +23,8 @@ class PrintHelper:
     BLINK = '\33[5m'
     BLINK2 = '\33[6m'
     SELECTED = '\33[7m'
+    GRAY = '\033[90m'
+    BLACK = '\033[90m'
 
     @classmethod
     def print(cls, text, col, indent=0, indent_step='   '):
@@ -36,6 +38,21 @@ class PrintHelper:
         """
         indent_str = indent_step * indent
         print(col + indent_str + text + cls.ENDC)
+
+    @staticmethod
+    def print_type_hierarchy(type_hierarchy, depth=0):
+        """
+        Helper function used to print a hierarchy of data_types
+
+        :param type_hierarchy: Hierarchical OrderedDict containing for each type an OrderDict of its subtype.
+                               A typically way to compute this is to hdmf.spec.catalog.SpecCatalog.get_full_hierarchy()
+        :param depth: Recursion depth of the print used to indent the hierarchy. This is mainly an internal
+                      parameter and is typically left at the default 0 when calling the function.å
+        """
+        for k, v in type_hierarchy.items():
+            msg = k
+            PrintHelper.print(msg, PrintHelper.OKBLUE + PrintHelper.BOLD if depth == 0 else PrintHelper.OKBLUE, depth)
+            PrintHelper.print_type_hierarchy(v, depth=depth+1)
 
 
 ########################################################
