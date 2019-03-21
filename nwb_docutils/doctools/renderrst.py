@@ -194,6 +194,52 @@ class SpecToRST(object):
         return clean_doc_str
 
     @staticmethod
+    def render_inherits_from(spec_catalog, data_type, prefix=None,  ignore_self=True):
+        """
+        Render an RST string with a list of all the types the data_type inherits from with links to
+        the corresponding sections.
+        :param spec_catalog: The SpecCatalog with all the types
+        :type spec_catalog: hdmf.spec.catalog.SpecCatalog
+        :param data_type: String with the name of the data type
+        :param prefix: String with the RST prefix to be added to the list
+        :param ignore_self: Bool indicating whether data_type should removed from the list.
+        :type data_type: str
+
+        :return: RST formatted strings with list of all the types the data_type inherits from.
+                 None is returned in case no elements would be rendered to the list.
+        """
+        ancestry = spec_catalog.get_hierarchy(data_type)
+        if len(ancestry) == 0 or (len(ancestry) == 1 and ignore_self):
+            return None
+        re = prefix if prefix is not None else ""
+        start_index = 1 if ignore_self else 0
+        re += ", ".join([RSTDocument.get_reference(RSTSectionLabelHelper.get_section_label(ct), ct)
+                           for ct in ancestry[start_index:]])
+        return re
+
+    def render_subtypes(spec_catalog, data_type, prefix=None):
+        """
+        Render an RST string with a list of all the subtypes of the given data_type with links to
+        the corresponding sections
+        :param spec_catalog: The SpecCatalog with all the types
+        :type spec_catalog: hdmf.spec.catalog.SpecCatalog
+        :param data_type: String with the name of the data type
+        :param prefix: String with the RST prefix to be added to the list
+        :param ignore_self: Bool indicating whether data_type should removed from the list.
+        :type data_type: str
+
+        :return: RST formatted strings with list of all the subtypes of data_type.
+                 None is returned in case no elements would be rendered to the list.
+        """
+        subtypes = spec_catalog.get_subtypes(data_type)
+        if len(subtypes) == 0:
+            return None
+        re = prefix if prefix is not None else ""
+        re += ", ".join([RSTDocument.get_reference(RSTSectionLabelHelper.get_section_label(ct), ct)
+                           for ct in subtypes])
+        return re
+
+    @staticmethod
     def render_data_type(dtype):
         """
         Create a text representation of the data type

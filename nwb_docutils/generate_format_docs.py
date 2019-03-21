@@ -184,8 +184,6 @@ def render_data_type_section(section,
             PrintHelper.print("BUILDING %s" % rt, PrintHelper.BOLD)
         # Get the spec
         rt_spec = spec_catalog.get_spec(rt)
-        rt_ancestry = spec_catalog.get_hierarchy(rt)
-        rt_subtypes = spec_catalog.get_subtypes(rt)
         rt_source_file = spec_catalog.get_spec_source_file(rt)
         # Check if the spec extends another spec
         extend_type = rt_spec.get(spec_inc_key, None)
@@ -229,17 +227,18 @@ def render_data_type_section(section,
         additional_props = []  # Additional properties that should be shown
         # Add list of the types this type inherits from. The ancestry always includes the type itself as first
         # entry, so we ignore the inheritance if the ancestry is only the type itself.
-        if len(rt_ancestry) > 1:
-            additional_props.append(
-                '**Inherits from:** %s' %
-                ", ".join([type_desc_doc.get_reference(LabelHelper.get_section_label(ct), ct)
-                           for ct in rt_ancestry[1:]]))
+        inherits_from_str = SpecToRST.render_inherits_from(spec_catalog=spec_catalog,
+                                                           data_type=rt,
+                                                           prefix="**Inherits from:** ",
+                                                           ignore_self=True)
+        if inherits_from_str is not None:
+            additional_props.append(inherits_from_str)
         # Add list of all the subtypes of this type
-        if len(rt_subtypes) > 0:
-            additional_props.append(
-                '**Subtypes:** %s' %
-                ", ".join([type_desc_doc.get_reference(LabelHelper.get_section_label(ct), ct)
-                           for ct in rt_subtypes]))
+        subtypes_str = SpecToRST.render_subtypes(spec_catalog=spec_catalog,
+                                         data_type=rt,
+                                         prefix="**Subtypes:** ")
+        if subtypes_str is not None:
+            additional_props.append(subtypes_str)
         # Add name of the source file
         additional_props.append('**Source filename:** %s' % rt_source_file)
         # Add a link to the source if rendered separately
@@ -456,7 +455,7 @@ def main():
                                   col=PrintHelper.OKGREEN)
                 return
 
-    # Load the core namespace
+    # Load the default namespace to be rendered
     namespace_catalog = load_namespace(namespace_file=core_namespace_file,
                                        default_namespace=spec_input_default_namespace,
                                        resolve=spec_resolve_type_inc,
@@ -467,7 +466,7 @@ def main():
     default_namespace = namespace_catalog.get_namespace(spec_input_default_namespace)
     spec_catalog = default_namespace.catalog
 
-    # Sorting types into sections
+    # Sort types into sections
     print()
     PrintHelper.print("SORTING TYPES INTO SECTIONS", PrintHelper.BOLD)
     PrintHelper.print("---------------------------", PrintHelper.BOLD)
@@ -486,20 +485,20 @@ def main():
     else:
         src_doc = None
 
-    # Create the master doc
+    # Create the master document
     masterdoc = RSTDocument()
     masterdoc.add_include(os.path.basename(file_dir) + "/" + os.path.basename(doc_filename))
     if src_doc is not None:
         masterdoc.add_include(os.path.basename(file_dir) + "/" + os.path.basename(srcdoc_filename))
 
-    # Create and render the type hierarchy
+    # Create and render the type hierarchy to RST
     PrintHelper.print("RENDERING TYPE HIERARCHY", PrintHelper.BOLD)
     PrintHelper.print("------------------------", PrintHelper.BOLD)
     type_hierarchy_doc, type_hierarchy = SpecToRST.render_type_hierarchy(spec_catalog)
     type_hierarchy_doc.write(type_hierarchy_doc_filename, 'w')
     PrintHelper.print_type_hierarchy(type_hierarchy)  # Print the hierarchy to the command line for debugging
 
-    # Render the namespace specficiation
+    # Render the namespace specification
     PrintHelper.print("RENDERING NAMESPACE SPECIFICATION", PrintHelper.BOLD)
     PrintHelper.print("---------------------------------", PrintHelper.BOLD)
     # Create the namespace document
@@ -542,9 +541,7 @@ def main():
                                  print_status=True)
         sec_index += 1
 
-    #######################################
-    #  Write the RST documents to file
-    #######################################
+    # Write the RST documents to file
     def write_rst_doc(document, filename, mode='w'):
         if document is not None and filename is not None:
             document.write(filename=filename, mode=mode)
