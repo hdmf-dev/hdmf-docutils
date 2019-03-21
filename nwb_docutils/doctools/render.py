@@ -1,104 +1,11 @@
 """
 Module with classes for rendering specifications and object hierarchies
 """
-from pynwb.form.spec.spec import AttributeSpec, LinkSpec
-from pynwb.spec import NWBGroupSpec as GroupSpec
-from pynwb.spec import NWBDatasetSpec as DatasetSpec
-from pynwb.spec import NWBNamespace as Namespace
-from pynwb.form.spec.catalog import SpecCatalog
-from pynwb.core import docval, getargs
+from hdmf.spec.spec import AttributeSpec, LinkSpec
+from hdmf.spec import GroupSpec
+from hdmf.spec import DatasetSpec
+from hdmf.utils import docval, getargs
 import warnings
-
-
-class SpecFormatter(object):
-    """
-    Helper class for formatting spec documents to string
-    """
-    @staticmethod
-    def spec_to_json(spec, pretty=False):
-        """
-        Convert a given specification to json.
-
-        :param spec: Specification data structure
-        :type spec: GroupSpec, DatasetSpec, AttributeSpec, LinkSpec
-
-        :param pretty: Should a pretty formatting be used when encoding the JSON.
-
-        :return: JSON string for the current specification
-        """
-        import json
-        if pretty:
-            return json.dumps(spec, sort_keys=True, indent=4, separators=(',', ': '))
-        else:
-            return json.dumps(spec)
-
-    @staticmethod
-    def spec_to_yaml(spec):
-        """
-        Convert a given specification to yaml.
-
-        :param spec: Specification data structure
-        :type spec: GroupSpec, DatasetSpec, AttributeSpec, LinkSpec
-
-        :return: YAML string for the current specification
-        """
-        import json
-        import sys
-        try:
-            from ruamel import yaml
-        except:
-            import yaml
-        clean_spec = json.loads(SpecFormatter.spec_to_json(spec, pretty=True))
-        if sys.version_info[0] == 3:
-            return yaml.dump(clean_spec, default_flow_style=False)
-        else:
-            return yaml.safe_dump(clean_spec, default_flow_style=False)
-
-    @classmethod
-    def spec_to_rst(cls, spec):
-        """
-        Create an RST document for the given spec
-
-        :param spec: Specification data structure
-        :type spec: GroupSpec, DatasetSpec, AttributeSpec, LinkSpec
-
-        :return: RSTDocument for the given spec
-        """
-        rst_doc = RSTDocument()
-        rst_doc.add_spec(spec)
-        return rst_doc
-
-    @staticmethod
-    def spec_from_file(filenames, group_spec_cls=None):
-        """
-        Generate a SpecCatalog for the given list of spec files
-
-        :param filenames: List of YAML/JSON specification files
-        :type filenames: List of strings
-        :param group_spec_cls: The GroupSpec class to be used for parsing specificationss
-        :return: SpecCatalog
-        """
-        try:
-            from ruamel import yaml
-        except:
-            import yaml
-        group_spec_cls = GroupSpec if group_spec_cls is None else group_spec_cls
-        spec_catalog = SpecCatalog()
-        for path in filenames:
-            with open(path, 'r') as stream:
-                d = yaml.safe_load(stream)
-                specs = d.get('groups')
-                if specs is None:
-                    if d.get('namespaces') is not None:
-                        warnings.warn("%s is a namespace file" % path)
-                    else:
-                        warnings.warn("no 'specs' found in %s" % path)
-                else:
-                    for spec_dict in specs:
-                        print(spec_dict['neurodata_type_def'])
-                        spec_obj = GroupSpec.build_spec(spec_dict)
-                        spec_catalog.auto_register(spec_obj)
-        return spec_catalog
 
 
 class HierarchyDescription(dict):
@@ -113,7 +20,7 @@ class HierarchyDescription(dict):
     by the full path to the object plus the actual name or type of the object.
 
     TODO Instead of using our own dict datastructures to describe datasets, groups etc. we should use
-         the standard spec datastructures provided by PyNWB.
+         the standard spec datastructures provided by HDMF
     """
     RELATIONSHIP_TYPES = {'managed_by': 'Object managed by',
                           'link': 'Object links to',
@@ -130,34 +37,33 @@ class HierarchyDescription(dict):
     def __setitem__(self, key, value):
         raise ValueError("Explicit setting of objects not allowed. Use the add_* functions to add objects")
 
-    def add_dataset(self, name, shape=None, dtype=None, neurodata_type=None, size=None):
+    def add_dataset(self, name, shape=None, dtype=None, data_type=None, size=None):
         """
         Add a dataset to the description
 
         :param name: Name of the dataset (full path)
         :param shape: Shape of the dataset
         :param dtype: Data type of the data
-        :param neurodata_type: NWB neurodata_type
+        :param data_type: object data_type (e.g, NWB neurodata_type)
         """
         self['datasets'].append({
             'name': name,
             'shape': shape,
             'dtype': dtype,
-            'neurodata_type': neurodata_type,
+            'data_type': data_type,
             'size': size
-
         })
 
-    def add_group(self, name, neurodata_type=None):
+    def add_group(self, name, data_type=None):
         """
         Add a group to the description
 
         :param name: Name of the group (full path)
-        :param neurodata_type: NWB neurodata type
+        :param data_type: object data type (e.g., NWB neurodata type)
         """
         self['groups'].append({
             'name': name,
-            'neurodata_type': neurodata_type
+            'data_type': data_type
         })
 
     def add_attribute(self,  name, value, size=None):
@@ -218,33 +124,39 @@ class HierarchyDescription(dict):
             :param obj: The spec for the object
             :param parent_name: String with the full path of the parent in the hierarchy
             """
+            type_def_key = obj.def_key() if hasattr(obj, 'def_key') else 'data_type'
+            type_inc_key = obj.inc_key() if hasattr(obj, 'inc_key') else 'data_type'
             obj_main_name = obj.name \
                 if obj.get('name', None) is not None \
-                else obj.get('neurodata_type_def', None) \
-                if obj.get('neurodata_type_def', None) is not None \
-                else obj.get('neurodata_type_inc', None) \
-                if obj.get('neurodata_type_inc', None) is not None \
+                else obj.get(type_def_key, None) \
+                if obj.get(type_def_key, None) is not None \
+                else obj.get(type_inc_key, None) \
+                if obj.get(type_inc_key, None) is not None \
                 else obj['target_type']
             if obj.get('name', None) is None:
                 obj_main_name = '<' + obj_main_name + '>'
             obj_name = os.path.join(parent_name, obj_main_name)
 
             if isinstance(obj, GroupSpec):
-                if obj.get('neurodata_type_def', None) is not None:
-                    nd = obj['neurodata_type_def']
+                type_def_key = obj.def_key()
+                type_inc_key = obj.inc_key()
+                if obj.get(type_def_key, None) is not None:
+                    nd = obj[type_def_key]
                 else:
-                    nd = obj.neurodata_type_inc
+                    nd = obj.get(type_inc_key, None)
                 specstats.add_group(name=obj_name,
-                                    neurodata_type=nd)
+                                    data_type=nd)
             elif isinstance(obj, DatasetSpec):
-                if obj.get('neurodata_type_def', None) is not None:
-                    nd = obj['neurodata_type_def']
+                type_def_key = obj.def_key()
+                type_inc_key = obj.inc_key()
+                if obj.get(type_def_key, None) is not None:
+                    nd = obj[type_def_key]
                 else:
-                    nd = obj.neurodata_type_inc
+                    nd = obj.get(type_inc_key, None)
                 specstats.add_dataset(name=obj_name,
                                       shape=obj.shape,
                                       dtype=obj['type'] if hasattr(obj, 'type') else None,
-                                      neurodata_type=nd)
+                                      data_type=nd)
             elif isinstance(obj, AttributeSpec):
                 specstats.add_attribute(name=obj_name,
                                         value=obj.value)
@@ -285,7 +197,7 @@ class HierarchyDescription(dict):
         return specstats
 
     @classmethod
-    def from_hdf5(cls, hdf_object, root='/'):
+    def from_hdf5(cls, hdf_object, root='/', data_type_attr_name='neurodata_type'):
         """
         Traverse the file to compute file object hierarchy data.
 
@@ -294,6 +206,9 @@ class HierarchyDescription(dict):
         :param root: String indicating the root object starting from which we should compute the file statistics.
                      Default value is "/", i.e., starting from the root itself
         :type root: String
+        :param data_type_attr_name: Name of the attribute in the HDF5 file reserved for storing the name of
+                                    object types, e.g., the neurodata_type in the case of NWB:N. Default is
+                                    'neurodata_type' with NWB in mind.
 
         :return: Instance of HierarchyDescription with the hierarchy of the objects
 
@@ -314,28 +229,28 @@ class HierarchyDescription(dict):
             obj_name = os.path.join(root, name)
             # Group and dataset metadata
             if isinstance(obj, h5py.Dataset):
-                ntype=None
-                if 'neurodata_type' in obj.attrs.keys():
-                    ntype = obj.attrs['neurodata_type'][:]
+                ntype = None
+                if data_type_attr_name in obj.attrs.keys():
+                    ntype = obj.attrs[data_type_attr_name][:]
 
                 filestats.add_dataset(name=obj_name,
                                       shape=obj.shape,
                                       dtype=obj.dtype,
-                                      neurodata_type=ntype,
+                                      data_type=ntype,
                                       size=obj.size * obj.dtype.itemsize)
             elif isinstance(obj, h5py.Group):
                 ntype = None
-                if 'neurodata_type' in obj.attrs.keys():
-                    ntype = obj.attrs['neurodata_type'][:]
-                filestats.add_group(name=obj_name, neurodata_type=ntype)
+                if data_type_attr_name in obj.attrs.keys():
+                    ntype = obj.attrs[data_type_attr_name][:]
+                filestats.add_group(name=obj_name, data_type=ntype)
                 # visititems does not visit any links. We need to add them here
                 for objkey in obj.keys():
                     objval = obj.get(objkey, getlink=True)
                     if isinstance(objval, h5py.SoftLink) or isinstance(objval, h5py.ExternalLink):
                         try:
                             linktarget = obj[objkey]
-                            if 'neurodata_type' in linktarget.attrs.keys():
-                                targettype = linktarget.attrs['neurodata_type'][:]
+                            if data_type_attr_name in linktarget.attrs.keys():
+                                targettype = linktarget.attrs[data_type_attr_name][:]
                             else:
                                 targettype = str(type(linktarget))
                         except KeyError:
@@ -449,7 +364,7 @@ class NXGraphHierarchyDescription(object):
         """
         import networkx as nx
 
-        graph = nx.Graph() # nx.MultiDiGraph()
+        graph = nx.Graph()  # nx.MultiDiGraph()
         # Add all nodes
         if include_datasets:
             for d in data['datasets']:
@@ -601,7 +516,6 @@ class NXGraphHierarchyDescription(object):
         ymax += yrange*0.1
         return (ymin, ymax)
 
-
     def suggest_figure_size(self):
         """
         Suggest a figure size for a graph based on the number of rows and columns in the hierarchy
@@ -616,11 +530,13 @@ class NXGraphHierarchyDescription(object):
                 nodes_at_level[xpos] += 1
             except KeyError:
                 nodes_at_level[xpos] = 1
-        num_cols = len(nodes_at_level)
         num_rows = max([v for v in nodes_at_level.values()])
-        w = 8 # num_cols + 1.5
-        h = min(num_rows*0.75, 8)  #num_rows * 0.5 + 1.5
-        return (w,h)
+        # num_cols = len(nodes_at_level)
+        # w = num_cols + 1.5
+        # h = num_rows * 0.5 + 1.5
+        w = 8
+        h = min(num_rows*0.75, 8)
+        return (w, h)
 
     @staticmethod
     def draw_graph(graph,
@@ -710,12 +626,18 @@ class NXGraphHierarchyDescription(object):
         fig = plt.figure(figsize=figsize)
         # List of object names
         all_nodes = graph.nodes(data=False)
-        n_names = {'typed_dataset': [i['name'] for i in data['datasets'] if i['neurodata_type'] is not None and i['name'] in all_nodes],
-                   'untyped_dataset': [i['name'] for i in data['datasets'] if i['neurodata_type'] is None and i['name'] in all_nodes],
-                   'typed_group': [i['name'] for i in data['groups'] if i['neurodata_type'] is not None and i['name'] in all_nodes],
-                   'untyped_group': [i['name'] for i in data['groups'] if i['neurodata_type'] is None and i['name'] in all_nodes],
-                   'attribute': [i['name'] for i in data['attributes'] if i['name'] in all_nodes],
-                   'link': [i['name'] for i in data['links'] if i['name'] in all_nodes]
+        n_names = {'typed_dataset': [i['name'] for i in data['datasets']
+                                     if i['data_type'] is not None and i['name'] in all_nodes],
+                   'untyped_dataset': [i['name'] for i in data['datasets']
+                                       if i['data_type'] is None and i['name'] in all_nodes],
+                   'typed_group': [i['name'] for i in data['groups']
+                                   if i['data_type'] is not None and i['name'] in all_nodes],
+                   'untyped_group': [i['name'] for i in data['groups']
+                                     if i['data_type'] is None and i['name'] in all_nodes],
+                   'attribute': [i['name'] for i in data['attributes']
+                                 if i['name'] in all_nodes],
+                   'link': [i['name'] for i in data['links']
+                            if i['name'] in all_nodes]
                    }
         # Define the legend labels
         n_legend = {'typed_dataset': 'Typed Dataset (%i)' % len(n_names['typed_dataset']),
@@ -723,16 +645,16 @@ class NXGraphHierarchyDescription(object):
                     'typed_group': 'Typed Group (%i)' % len(n_names['typed_group']),
                     'untyped_group': 'Untyped Group (%i)' % len(n_names['untyped_group']),
                     'attribute': 'Attributes (%i)' % len(n_names['attribute']),
-                    'link': 'Links (%i)' % len(n_names['link'])
-        }
+                    'link': 'Links (%i)' % len(n_names['link'])}
+
         # Define the node colors
         n_colors = {'typed_dataset': 'blue',
                     'untyped_dataset': 'lightblue',
                     'typed_group': 'red',
                     'untyped_group': 'orange',
                     'attribute': 'gray',
-                    'link': 'white'
-        }
+                    'link': 'white'}
+
         if node_colors is not None:
             node_colors.update(node_colors)
         # Define the node alpha
@@ -799,6 +721,7 @@ class NXGraphHierarchyDescription(object):
         for rt, rl in edge_by_type.items():
             if relationship_types is None or rt in relationship_types:
                 try:
+                    edge_label = rt if relationship_counts is None else (rt+' (%i)' % relationship_counts[rt])
                     nx.draw_networkx_edges(graph,
                                            pos,
                                            edgelist=rl,
@@ -807,7 +730,7 @@ class NXGraphHierarchyDescription(object):
                                            edge_color=rel_colors[rt],
                                            arrows=False,
                                            style='solid' if rt != 'link' else 'dashed',
-                                           label=rt if relationship_counts is None else (rt+' (%i)' % relationship_counts[rt])
+                                           label=edge_label
                                            )
                 except KeyError:
                     pass
@@ -848,496 +771,3 @@ class NXGraphHierarchyDescription(object):
         if show_plot:
             plt.show()
         return fig
-
-
-class RSTDocument(object):
-    """
-    Helper class for generating an reStructuredText (RST) document
-
-    :ivar document: The string with the RST document
-    :ivar newline: Newline string
-    """
-    ADMONITIONS = ['attention', 'caution', 'danger', 'error', 'hint', 'important', 'note', 'tip', 'warning']
-    ALIGN = ['top', 'middle', 'bottom', 'left', 'center', 'right']
-
-    def __init__(self):
-        """Initalize empty RST document"""
-        self.document = ""
-        self.newline = "\n"
-        self.default_indent = '    '
-
-    def __get_headingline(self, title, heading_char):
-        """Create a headingline for a given title"""
-        heading = ""
-        for i in range(len(title)):
-            heading += heading_char
-        return heading
-
-    def add_text(self, text):
-        """
-        Add the given text to the document
-        :param text: String with the text to be added
-        """
-        self.document += text
-
-    def add_part(self, title):
-        """
-        Add a document part heading
-
-        :param title: Title of the reading
-        """
-        heading = self.__get_headingline(title, '#')
-        self.document += (heading + self.newline)
-        self.document += (title + self.newline)
-        self.document += (heading + self.newline)
-        self.document += self.newline
-
-    def add_chapter(self, title):
-        """
-        Add a document chapter heading
-
-        :param title: Title of the reading
-        """
-        heading = self.__get_headingline(title, '*')
-        self.document += (heading + self.newline)
-        self.document += (title + self.newline)
-        self.document += (heading + self.newline)
-        self.document += self.newline
-
-    def add_label(self, label):
-        """
-        Add a section lable
-        :param label: name of the lable
-        """
-        self.document += ".. _%s:" % label
-        self.document += self.newline + self.newline
-
-    @staticmethod
-    def get_reference(label, link_title=None):
-        """
-        Get RST text to create a reference to the given label
-        :param label: Name of the lable to link to
-        :param link_title: Text for the link
-        :return: String with the inline reference text
-        """
-        if link_title is not None:
-            return ":ref:`%s <%s>`" % (link_title, label)
-        else:
-            return ":ref:`%s`" % label
-
-    def get_numbered_reference(self, label):
-        return ":numref:`%s`" % label
-
-    def add_section(self, title):
-        """
-        Add a document section heading
-
-        :param title: Title of the reading
-        """
-        heading = self.__get_headingline(title, '=')
-        self.document += (title + self.newline)
-        self.document += (heading + self.newline)
-        self.document += self.newline
-
-    def add_subsection(self, title):
-        """
-        Add a document subsection heading
-
-        :param title: Title of the reading
-        """
-        heading = self.__get_headingline(title, '-')
-        self.document += (title + self.newline)
-        self.document += (heading + self.newline)
-        self.document += self.newline
-
-    def add_subsubsection(self, title):
-        """
-        Add a document subsubsection heading
-
-        :param title: Title of the reading
-        """
-        heading = self.__get_headingline(title, '^')
-        self.document += (title + self.newline)
-        self.document += (heading + self.newline)
-        self.document += self.newline
-
-    def add_paragraph(self, title):
-        """
-        Add a document paragraph heading
-
-        :param title: Title of the reading
-        """
-        heading = self.__get_headingline(title, '"')
-        self.document += (title + self.newline)
-        self.document += (heading + self.newline)
-        self.document += self.newline
-
-    def add_code(self, code_block, code_type='python', show_line_numbers=True, emphasize_lines=None):
-        """
-        Add code block to the document
-        :param code_block: String with the code block
-        :param show_line_numbers: Bool indicating whether line number should be shown
-        :param emphasize_lines: None or list of int with the line numbers to be highlighted
-        :param code_type: The language type to be used for source code highlighting in the rst doc
-        """
-        self.document += ".. code-block:: %s%s" % (code_type, self.newline)
-        if show_line_numbers:
-            self.document += self.indent_text(':linenos:') + self.newline
-        if emphasize_lines is not None:
-            self.document += self.indent_text(':emphasize-lines: ')
-            for i, j in enumerate(emphasize_lines):
-                self.document += str(j)
-                if i < len(emphasize_lines)-1:
-                    self.document += ','
-            self.document += self.newline
-        self.document += self.newline
-        self.document += self.indent_text(code_block)  # Indent text by 4 spaces
-        self.document += self.newline
-        self.document += self.newline
-
-    def indent_text(self, text, indent=None):
-        """
-        Helper function used to indent a given text by a given prefix. Usually 4 spaces.
-
-        :param text: String with the text to be indented
-        :param indent: String with the prefix to be added to each line of the string. If None then self.default_indent
-                       will be used.
-
-        :return: New string with each line indented by the current indent
-        """
-        curr_indent = indent if indent is not None else self.default_indent
-        return curr_indent + curr_indent.join(text.splitlines(True))
-
-    def add_list(self, content, indent=None, item_symbol='*'):
-        """
-        Recursively add a list with possibly multiple levels to the document
-        :param content: Nested list of strings with the content to be rendered
-        :param indent: Indent to be used for the list. Required for recursive indentation of lists.
-        """
-        indent = '' if indent is None else indent
-        for item in content:
-            if isinstance(item, list) or isinstance(item, tuple):
-                self.add_list(item,
-                              indent=indent+self.default_indent,
-                              item_symbol=item_symbol)
-            else:
-                self.document += ('%s%s %s%s' % (indent, item_symbol, item, self.newline))
-        self.document += self.newline
-
-    def add_admonitions(self, atype, text):
-        """
-        Add and admonition to the text. Admonitions are specially marked "topics"
-        that can appear anywhere an ordinary body element can
-
-        :param atype: One of RTDDocument.ADMONITIONS
-        :param text: The RTD formatted text to be shown or the RTDDocument to be rendered as part of the admonition
-        """
-        curr_text = text if not isinstance(text, RSTDocument) else text.document
-        self.document += self.newline
-        self.document += ".. %s::" % atype
-        self.document += self.newline
-        self.document += self.indent_text(text)
-        self.document += self.newline
-        self.document += self.newline
-
-    def add_include(self, filename, indent=None):
-        """
-        Include the file with the given name as part of this RST document
-
-        :param filename: Name of the file to be included
-        :param indent: Indent to be used for the include.
-
-        """
-        indent = '' if indent is None else indent
-        self.document += "%s.. include:: %s" % (indent, filename)
-        self.document += self.newline
-
-    def add_figure(self,
-                   img,
-                   caption=None,
-                   legend=None,
-                   alt=None,
-                   height=None,
-                   width=None,
-                   scale=None,
-                   align=None,
-                   target=None):
-        """
-
-        :param img: Path to the image to be shown as part of the figure.
-        :param caption: Optional caption for the figure
-        :type caption: String or RSTDocument
-        :param legend: Figure legend
-        :type legend: String or RST Document
-        :param alt: Alternate text.  A short description of the image used when the image cannot be displayed.
-        :param height: Height of the figure in pixel
-        :type height: Int
-        :param width: Width of the figure in pixel
-        :type width: Int
-        :param scale: Uniform scaling of the figure in %. Default is 100.
-        :type scale: Int
-        :param align: Alignment of the figure. One of RTDDocument.ALIGN
-        :param target: Hyperlink to be placed on the image.
-        """
-        self.document += self.newline
-        self.document += ".. figure:: %s" % img
-        self.document += self.newline
-        if scale is not None:
-            self.document += (self.indent_text(':scale: %i' % scale) + ' %' + self.newline)
-        if alt is not None:
-            self.document += (self.indent_text(':alt: %s' % alt) + self.newline)
-        if height is not None:
-            self.document += (self.indent_text(':height: %i px' % height) + self.newline)
-        if width is not None:
-            self.document += (self.indent_text(':width: %i px' % width) + self.newline)
-        if align is not None:
-            if align not in self.ALIGN:
-                raise ValueError('align not valid. Found %s expected one of %s' % (str(align), str(self.ALIGN)))
-            self.document += (self.indent_text(':align: %s' % align) + self.newline)
-        if target is not None:
-            self.document += (self.indent_text(':target: %s' % target) + self.newline)
-        self.document += self.newline
-        if caption is not None:
-            curr_caption = caption if not isinstance(caption, RSTDocument) else caption.document
-            self.document += (self.indent_text(curr_caption) + self.newline)
-        if legend is not None:
-            if caption is None:
-                self.document += (self.indent_text('.. ') + self.newline + self.default_indent + self.newline)
-            curr_legend = legend if not isinstance(legend, RSTDocument) else legend.document
-            self.document += (self.indent_text(curr_legend) + self.newline)
-        self.document += self.newline
-
-    def add_sidebar(self, text, title, subtitle=None):
-        """
-        Add a sidebar. Sidebars are like miniature, parallel documents that occur inside other
-        documents, providing related or reference material.
-
-        :param text: The content of the sidebar
-        :type text: String or RSTDocument
-        :param title: Title of the sidebar
-        :type title: String
-        :param subtitle: Optional subtitel of the sidebar
-        :type subtitle: String
-        """
-        self.document += self.newline
-        self.document += '.. sidebar:: ' + title + self.newline
-        if subtitle is not None:
-            self.document += (self.indent_text(':subtitle: %s' % subtitle) + self.newline)
-        self.document += self.newline
-        curr_text = text if not isinstance(text, RSTDocument) else text.document
-        self.document += (self.indent_text(curr_text)) + self.newline + self.newline
-
-    def add_topic(self, text, title):
-        """
-        Add a topic. A topic is like a block quote with a title, or a self-contained section with no subsections.
-
-        :param text: The content of the sidebar
-        :type text: String or RSTDocument
-        :param title: Title of the sidebar
-        :type title: String
-        """
-        self.document += self.newline
-        self.document += '.. sidebar:: ' + title + self.newline
-        self.document += self.newline
-        curr_text = text if not isinstance(text, RSTDocument) else text.document
-        self.document += (self.indent_text(curr_text)) + self.newline + self.newline
-
-    def add_spec(self, spec, show_json=False, show_yaml=False):
-        """
-        Convert the given spec to RST and add it to the document
-
-        :param spec: Specification data structure
-        :param show_json: Show JSON-based spec as part of the RST
-        :param show_yaml: Show YAML-based spec as part of the RST
-        :type spec: GroupSpec, DatasetSpec, AttributeSpec, LinkSpec
-        """
-        if show_json:
-            self.add_code(SpecFormatter.spec_to_json(spec, True), code_type='json')
-        if show_yaml:
-            self.add_code(SpecFormatter.spec_to_yaml(spec), code_type='yaml')
-
-    def add_latex_clearpage(self):
-        self.document += self.newline
-        self.document += ".. raw:: latex" + self.newline + self.newline
-        self.document += self.default_indent + '\clearpage \\newpage' + self.newline + self.newline
-
-    def add_table(self, rst_table, **kwargs):
-        """
-        Render an RSTtable in this document
-
-        :param rst_table: RSTTable object to be rendered in this document
-        :param kwargs: Arguments to be passed to the RSTTable.render
-        """
-        rst_table.render(self, **kwargs)
-
-    def write(self, filename, mode='w'):
-        """
-        Write the document to file
-
-        :param filename: Name of the output file
-        :param mode: file open mode
-        """
-        outfile = open(filename, mode=mode)
-        outfile.write(self.document)
-        outfile.flush()
-        outfile.close()
-
-
-class  RSTTable(object):
-    """
-    Helper class to generate RST tables
-    """
-    def __init__(self, cols):
-        """
-
-        :param cols: List of strings with the column labels. Or int with the number of columns
-        :return:
-        """
-        self.__table = []
-        self.__cols = cols if not isinstance(cols, int) else ([''] * cols)
-        self.newline = "\n"
-
-
-    def set_cell(self, row, col, text):
-        if col >= len(self.__cols):
-            raise ValueError('Column index out of bounds: col=%i , max_index=%i' % (col, len(self.__cols)-1))
-        if row >= len(self.__table):
-            raise ValueError('Row index out of bounds: row=%i , max_index=%i' % (row, len(self.__table)-1))
-        self.__table[row][col] = text
-
-    def __len__(self):
-        return self.num_rows()
-
-    def num_rows(self):
-        """
-        :return: Number of rows in the table
-        """
-        return len(self.__table)
-
-    def num_cols(self):
-        """
-        :return: Number of columns in the table
-        """
-        return len(self.__cols)
-
-    def add_row(self, row_values=None, replace_none=None, convert_to_str=True):
-        """
-        Add a row of values to the table
-        :param row_values: List of all values for the current row (or None if an empty row should be added).
-                           If values in the list contain newline strings then this will result in the creation
-                           of a multiline row with as many lines as the larges cell (i.e. the cell with the largest
-                           number of newline symbols).
-        :param replace_none:  String to be used to replace None values in the row data (default=None, i.e., do not
-                              replace None values)
-        :param convert_to_str: Boolean indicating whether all row values should be converted to strings. (default=True)
-        """
-        row_vals = row_values if row_values is not None else ([''] * len(self.__cols))
-        if replace_none:
-            for i, v in enumerate(row_values):
-                if v is None:
-                    row_vals[i] = replace_none
-        if convert_to_str:
-            row_vals = [str(v) for v in row_vals]
-        self.__table.append(row_vals)
-
-    def set_col(self, col, text):
-        if col >= len(self.__cols):
-            raise ValueError('Column index out of bounds: col=%i , max_index=%i' % (col, len(self.__cols)-1))
-        self.__cols[col] = text
-
-    def render(self,
-               rst_doc=None,
-               title=None,
-               table_class='longtable',
-               widths=None,
-               ignore_empty=True,
-               table_ref=None,
-               latex_tablecolumns=None):
-        """
-        Render the table to an RSTDocument
-
-        :param rst_doc: RSTDocument where the table should be rendered in or None if a new document should be created
-        :param title: String with the optional title for the table
-        :param table_class: Optional class for the table.  We here use 'longtable' as default. Set to None to use
-                     the Sphinx default. Other table classes are: 'longtable', 'threeparttable', 'tabular', 'tabulary'
-        :param widths: Optional list of width for the columns
-        :param ignore_empty: Boolean indicating whether empty tables should be rendered (i.e., if False then
-                    headings with no additional rows will be rendered) or if no table should be created
-                    if no data rows exists (if set to True). (default=True)
-        :param table_ref: Name of the reference to be used for the table
-        :param latex_tablecolumns: Latex columns description to be rendered as part of the Sphinx tabularcolumns::
-                    argument. E.g. '|p{3.5cm}|p{1cm}|p{10.5cm}|'
-        """
-        if len(self.__table) == 0 and ignore_empty:
-            return rst_doc if rst_doc is not None else RSTDocument()
-
-        def table_row_divider(col_widths, style='='):
-            #out="" if not use_longtable else "    "
-            out="    "
-            for cw in col_widths:
-                out += '+' +  (cw+2) * style
-            out += "+\n"
-            return out
-
-        def normalize_cell(cell, col_width):
-            return " " + cell + (col_width  - len(cell) + 1) * " "
-
-        def render_row(col_widths, row, newline=self.newline):
-
-            row_lines = [r.split(newline) for r in row]
-            num_lines = max([len(r) for r in row_lines])
-            for r in row:
-                if newline in r:
-                    max(num_lines, len(r.split(newline)))
-            row_text = ''
-            for l in range(num_lines):
-                row_text += '    |'
-                for ri in range(len(row)):
-                    cell = row_lines[ri][l] if len(row_lines[ri]) > l else ''
-                    row_text += normalize_cell(cell, col_width=col_widths[ri]) + '|'
-                row_text += newline
-            return row_text
-            #for i, cell, in enumerate(row):
-            #    row_text += normalize_cell(cell, col_width=col_widths[i]) + '|'
-            #row_text += newline
-            #return row_text
-
-        def cell_len(cell, newline=self.newline):
-            return max(len(r) for r in cell.split(newline))
-
-        col_widths = [max(out)+2 for out in map(list, zip(*[[cell_len(item) for item in row] for row in ([self.__cols,] + self.__table)]))]
-        rst_doc = rst_doc if rst_doc is not None else RSTDocument()
-        rst_doc.add_text(rst_doc.newline)
-        if latex_tablecolumns:
-            rst_doc.add_text('.. tabularcolumns:: %s%s' % (latex_tablecolumns, rst_doc.newline))
-        if table_ref is not None:
-            rst_doc.add_label(table_ref)
-        rst_doc.add_text('.. table::')
-        if title:
-            rst_doc.add_text(' ' + title)
-        rst_doc.add_text(rst_doc.newline)
-        if widths:
-            rst_doc.add_text('    :widths:')
-            for i in widths:
-                rst_doc.add_text(' %i' %i)
-            rst_doc.add_text(rst_doc.newline)
-        if table_class is not None:
-            rst_doc.add_text('    :class: ' + table_class + rst_doc.newline)
-        rst_doc.add_text(rst_doc.newline)
-
-        # Render the table header
-        rst_doc.add_text(table_row_divider(col_widths=col_widths, style='-'))
-        rst_doc.add_text(render_row(col_widths, self.__cols, rst_doc.newline))
-        rst_doc.add_text(table_row_divider(col_widths=col_widths, style='='))
-
-        # Render the main table contents
-        for row in self.__table:
-            rst_doc.add_text(render_row(col_widths, row, rst_doc.newline))
-            rst_doc.add_text(table_row_divider(col_widths=col_widths, style='-'))
-        rst_doc.add_text(rst_doc.newline)
-        rst_doc.add_text(rst_doc.newline)
-
-
-        # Return the table
-        return rst_doc
-
