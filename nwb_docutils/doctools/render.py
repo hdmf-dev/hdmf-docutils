@@ -229,7 +229,7 @@ class HierarchyDescription(dict):
             obj_name = os.path.join(root, name)
             # Group and dataset metadata
             if isinstance(obj, h5py.Dataset):
-                ntype=None
+                ntype = None
                 if data_type_attr_name in obj.attrs.keys():
                     ntype = obj.attrs[data_type_attr_name][:]
 
@@ -364,7 +364,7 @@ class NXGraphHierarchyDescription(object):
         """
         import networkx as nx
 
-        graph = nx.Graph() # nx.MultiDiGraph()
+        graph = nx.Graph()  # nx.MultiDiGraph()
         # Add all nodes
         if include_datasets:
             for d in data['datasets']:
@@ -516,7 +516,6 @@ class NXGraphHierarchyDescription(object):
         ymax += yrange*0.1
         return (ymin, ymax)
 
-
     def suggest_figure_size(self):
         """
         Suggest a figure size for a graph based on the number of rows and columns in the hierarchy
@@ -531,11 +530,13 @@ class NXGraphHierarchyDescription(object):
                 nodes_at_level[xpos] += 1
             except KeyError:
                 nodes_at_level[xpos] = 1
-        num_cols = len(nodes_at_level)
         num_rows = max([v for v in nodes_at_level.values()])
-        w = 8 # num_cols + 1.5
-        h = min(num_rows*0.75, 8)  #num_rows * 0.5 + 1.5
-        return (w,h)
+        # num_cols = len(nodes_at_level)
+        # w = num_cols + 1.5
+        # h = num_rows * 0.5 + 1.5
+        w = 8
+        h = min(num_rows*0.75, 8)
+        return (w, h)
 
     @staticmethod
     def draw_graph(graph,
@@ -625,12 +626,18 @@ class NXGraphHierarchyDescription(object):
         fig = plt.figure(figsize=figsize)
         # List of object names
         all_nodes = graph.nodes(data=False)
-        n_names = {'typed_dataset': [i['name'] for i in data['datasets'] if i['data_type'] is not None and i['name'] in all_nodes],
-                   'untyped_dataset': [i['name'] for i in data['datasets'] if i['data_type'] is None and i['name'] in all_nodes],
-                   'typed_group': [i['name'] for i in data['groups'] if i['data_type'] is not None and i['name'] in all_nodes],
-                   'untyped_group': [i['name'] for i in data['groups'] if i['data_type'] is None and i['name'] in all_nodes],
-                   'attribute': [i['name'] for i in data['attributes'] if i['name'] in all_nodes],
-                   'link': [i['name'] for i in data['links'] if i['name'] in all_nodes]
+        n_names = {'typed_dataset': [i['name'] for i in data['datasets']
+                                     if i['data_type'] is not None and i['name'] in all_nodes],
+                   'untyped_dataset': [i['name'] for i in data['datasets']
+                                       if i['data_type'] is None and i['name'] in all_nodes],
+                   'typed_group': [i['name'] for i in data['groups']
+                                   if i['data_type'] is not None and i['name'] in all_nodes],
+                   'untyped_group': [i['name'] for i in data['groups']
+                                     if i['data_type'] is None and i['name'] in all_nodes],
+                   'attribute': [i['name'] for i in data['attributes']
+                                 if i['name'] in all_nodes],
+                   'link': [i['name'] for i in data['links']
+                            if i['name'] in all_nodes]
                    }
         # Define the legend labels
         n_legend = {'typed_dataset': 'Typed Dataset (%i)' % len(n_names['typed_dataset']),
@@ -638,16 +645,16 @@ class NXGraphHierarchyDescription(object):
                     'typed_group': 'Typed Group (%i)' % len(n_names['typed_group']),
                     'untyped_group': 'Untyped Group (%i)' % len(n_names['untyped_group']),
                     'attribute': 'Attributes (%i)' % len(n_names['attribute']),
-                    'link': 'Links (%i)' % len(n_names['link'])
-        }
+                    'link': 'Links (%i)' % len(n_names['link'])}
+
         # Define the node colors
         n_colors = {'typed_dataset': 'blue',
                     'untyped_dataset': 'lightblue',
                     'typed_group': 'red',
                     'untyped_group': 'orange',
                     'attribute': 'gray',
-                    'link': 'white'
-        }
+                    'link': 'white'}
+
         if node_colors is not None:
             node_colors.update(node_colors)
         # Define the node alpha
@@ -714,6 +721,7 @@ class NXGraphHierarchyDescription(object):
         for rt, rl in edge_by_type.items():
             if relationship_types is None or rt in relationship_types:
                 try:
+                    edge_label = rt if relationship_counts is None else (rt+' (%i)' % relationship_counts[rt])
                     nx.draw_networkx_edges(graph,
                                            pos,
                                            edgelist=rl,
@@ -722,7 +730,7 @@ class NXGraphHierarchyDescription(object):
                                            edge_color=rel_colors[rt],
                                            arrows=False,
                                            style='solid' if rt != 'link' else 'dashed',
-                                           label=rt if relationship_counts is None else (rt+' (%i)' % relationship_counts[rt])
+                                           label=edge_label
                                            )
                 except KeyError:
                     pass
@@ -763,5 +771,3 @@ class NXGraphHierarchyDescription(object):
         if show_plot:
             plt.show()
         return fig
-
-
