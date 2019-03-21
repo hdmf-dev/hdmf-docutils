@@ -2,24 +2,23 @@
 Generate figures and RST documents from the NWB YAML specification for the format specification documentation
 """
 
-# TODO In the type hierarchy section add a section to order types by based on which YAML file they appear in
-# TODO In the sections describing the different types add the name of the source YAML file
 
 # Python 2/3 compatibility
 from __future__ import print_function
 
 from hdmf.spec.spec import GroupSpec, DatasetSpec, LinkSpec, AttributeSpec, RefSpec
 from hdmf.spec.namespace import NamespaceCatalog
-from collections import OrderedDict
+from hdmf.spec.namespace import SpecNamespace
 import warnings
 import os
 
 from .doctools.rstdoc import RSTSectionLabelHelper as LabelHelper
-from .doctools.rstdoc import RSTDocument, RSTTable
+from .doctools.rstdoc import RSTDocument, SpecToRST, DataTypeSection
 from .doctools.output import PrintHelper, GitHashHelper
 
-
-# Import settings from the configuration file
+############################################################################
+# Import settings from the configuration file and define default settings
+###########################################################################
 try:
     from conf_doc_autogen import spec_show_yaml_src, \
         spec_generate_src_file, \
@@ -64,7 +63,6 @@ try:
         from conf_doc_autogen import spec_namespace_spec_cls
     except ImportError:
         warnings.warn("spec_namespace_spec_cls not set. Using HDMF SpecNamespace class as default.")
-        from hdmf.spec import SpecNamespace
         spec_namespace_spec_cls = SpecNamespace
 except ImportError:
     print("Could not import SPHINX conf_doc_autogen.py file. Please add the PYTHONPATH to the source directory where the conf_doc_autogen.py file is located")
@@ -94,390 +92,43 @@ except ImportError:
 CUSTOM_LATEX_TABLE_COLUMNS = "|p{4cm}|p{1cm}|p{10cm}|"
 
 
-########################################################
-#  Internal schema helper classes
-########################################################
-class SchemaHelper(object):
+def load_namespace(namespace_file,
+                   default_namespace='core',
+                   resolve=True,
+                   default_type_map=None,
+                   group_spec_cls=GroupSpec,
+                   dataset_spec_cls=DatasetSpec,
+                   spec_namespace_cls=SpecNamespace):
     """
-    Helper class with functions to help manage and interact with the schema
+    Helper function used to load namespace from file
+
+    :param namespace_file: String with the path to the YAML specification of the namespace
+    :param default_namespace: String with the name of the default namespace
+    :param resolve: Bool indicating whether the type inclusions should be resolved in the namespace
+    :param default_type_map: The default TypeMap to be used for loading namespaces. This is useful, e.g., when we have
+                             an API (e.g., PyNWB) where we have type mape that we want to extend/reuse.
+
+    :return: NamespaceCatalog
     """
-    @staticmethod
-    def load_nwb_namespace(namespace_file, default_namespace='core', resolve=spec_resolve_type_inc):
-        """
-        Load an nwb namespace from file
-        :return:
-        """
-        # Default load when documenting extensions
-        namespace = None
-        if spec_default_type_map is not None:
-            try:
-                spec_default_type_map.load_namespaces(namespace_file, resolve=resolve)
-                namespace = spec_default_type_map.namespace_catalog
-            # When renderning the core spec we'll get a KeyError because it already exists
-            # so we'll load the namespace separately
-            except KeyError:
-               pass
-        # Load the namespace separately if it already exists or we don't have a default type map specified
-        if namespace is None:
-            namespace = NamespaceCatalog(default_namespace,
-                                         group_spec_cls=spec_group_spec_cls,
-                                         dataset_spec_cls=spec_dataset_spec_cls,
-                                         spec_namespace_cls=spec_namespace_spec_cls)
-            namespace.load_namespaces(namespace_file, resolve=resolve)
-
-        default_spec_catalog = namespace.get_namespace(default_namespace).catalog
-        return namespace, default_spec_catalog
-
-    @staticmethod
-    def clean_schema_doc_string(doc_str, add_prefix=None, add_postifix=None, rst_format='**', remove_html_tags=True):
-        """
-        Replace COMMENT, NOTE, MORE_INFO etc. qualifiers and html tags from the original spec
-        with RST-style text so that it renders correctly in the Sphinx docs.
-
-        :param doc_str: The documentation string to be processed
-        :param add_prefix: Prefix string to be added before Comment, Note, etc. substrings.
-                        Useful, e.g., to add newlines before the different sections of the doc string.
-        :param rst_format: RST formatting to be used for Comment, Note et.c headings. Default='**' for bold text.
-        :param remove_html_tags: Boolean indicating whether the function should try to replace html tags with rst
-                                 tags if possible
-        :return: New rst string
-        """
-        prefix = ' ' if add_prefix is None else add_prefix
-        temp_str = doc_str
-        if remove_html_tags:
-            # temp_str = re.sub('<[^<]+?>', '', temp_str)
-            temp_str = temp_str.replace('&lt;', '<')
-            temp_str = temp_str.replace('&gt;', '>')
-            temp_str = temp_str.replace('<b>', ' **')
-            temp_str = temp_str.replace('</b>', '** ')
-            temp_str = temp_str.replace('<i>', ' *')
-            temp_str = temp_str.replace('</i>', '* ')
-            temp_str = temp_str.replace(':blue:', '')
-
-        temp_str = temp_str.replace('COMMENT:', '%s%sComment:%s ' % (prefix, rst_format, rst_format))
-        temp_str = temp_str.replace('MORE_INFO:','%s%sAdditional Information:%s ' % (prefix, rst_format, rst_format))
-        temp_str = temp_str.replace('NOTE:', '%s %sAdditional Information:%s '% (prefix, rst_format, rst_format))
-        if add_postifix is not None:
-            temp_str += add_postifix
-        return temp_str
-
-    @staticmethod
-    def quantity_to_string(quantity):
-        """
-        Helper function to convert a quantity identifier from the schema to a consistent
-        string for the documentation
-
-        :param quantity: Quantity string used in the format specification
-        :return: String describing the quantity
-        """
-        qdict = {
-            '*'            : '0 or more',
-            'zero_or_more' : '0 or more',
-            '+'            : '1 or more',
-            'one_or_more'  : '1 or more',
-            '?'            : '0 or 1',
-            'zero_or_one'  : '0 or 1'
-        }
-        if isinstance(quantity, int):
-            return str(quantity)
-        else:
-            return qdict[quantity]
-
-    @staticmethod
-    def get_primitive_spectype(spec):
-        """
-        Given a spec get a string indicating the primitive type of the spec
-
-        :param spec: The spec object
-
-        :return: String indicating the primitive type (e.g., Dataset, Group, Attribute, Link, Ref, etc.)
-        """
-        if isinstance(spec, GroupSpec):
-            return 'Group'
-        elif isinstance(spec, DatasetSpec):
-            return 'Dataset'
-        elif isinstance(spec, AttributeSpec):
-            return 'Attribute'
-        elif isinstance(spec, LinkSpec):
-            return 'Link'
-        elif isinstance(spec, RefSpec):
-            return 'Ref'
-        else:
-            raise ValueError("Unknown specification object type")
-
-    @staticmethod
-    def compute_data_type_hierarchy(spec_catalog):
-        """
-        Sort and group specifications based on their data_type to compute the hierarchy of types
-
-        :param spec_catalog: The catalog of specifications to be rendered
-
-        :return:
-            * `type_hierarchy` : Nested collection of OrderedDicts. The keys in the OrderedDicts are the
-                                 data_type string. The values are DataTypeDicts with the following keys:
-                                 `spec` with the specification of the class, `ancestry` with a list of
-                                 types the object inherits from, and `subtypes` with a nested OrderedDict
-                                 describing the subtypes.
-            * `flat_type_hiearchy` : Flattened type hierarchy. This is an OrderedDict containing all types
-                                 and their descriptions. This is the same as type_hierarchy, but instead of
-                                 a nested dict all types are part of the top-level dict.
-
-        """
-        def find_subtypes(spec_catalog, registered_types, data_type, ancestry):
-            """
-            Recursively find all subtypes that inherit from the given type
-            """
-            subtypes = OrderedDict()
-            for rt in registered_types:
-                rt_spec = spec_catalog.get_spec(rt)
-                if rt_spec.get(spec_inc_key, None) == data_type  and rt_spec.get(spec_def_key, None) != data_type:
-                    subtypes[rt] = DataTypeDict(data_type=rt,
-                                                spec=rt_spec,
-                                                ancestry=ancestry,
-                                                subtypes=find_subtypes(spec_catalog,
-                                                                            registered_types,
-                                                                            rt,
-                                                                            ancestry + [rt,]))
-            return subtypes
-
-        def flatten_hierarchy(type_hierarchy, flat_type_hierarchy):
-            """
-            Take the object hierarchy and flatten it to dict with a single level
-
-            :param type_hierarchy:
-            :param flat_type_hierarchy:
-            :return:
-            """
-            for k, v in type_hierarchy.items():
-                flat_type_hierarchy[k] = v
-                flatten_hierarchy(v['subtypes'], flat_type_hierarchy)
-            return flat_type_hierarchy
-
-
-        # Get the list of all types
-        registered_types = sorted(spec_catalog.get_registered_types())
-        type_hierarchy = OrderedDict()
-
-        # Compute the type hierarchy
-        for rt in registered_types:
-            rt_spec = spec_catalog.get_spec(rt)
-            if rt_spec.get(spec_inc_key, None) is None:
-                type_hierarchy[rt] = DataTypeDict(data_type=rt,
-                                                  spec=spec_catalog.get_spec(rt),
-                                                  ancestry=[],
-                                                  subtypes=find_subtypes(spec_catalog, registered_types, rt, [rt]))
-
-        # Compute the flattened type hierarchy
-        flat_type_hierarchy = flatten_hierarchy(type_hierarchy, OrderedDict())
-
-        # Check that we actually included all the types. If the above code is correct, we should have captured all types.
-        for rt in registered_types:
-            if rt not in flat_type_hierarchy:
-                PrintHelper.print('ERROR -- Type missing in type hierarchy. Adding it as a basetype: %s' % rt, PrintHelper.FAIL)
-                type_hierarchy[rt] = DataTypeDict(data_type=rt,
-                                                  spec=spec_catalog.get_spec(rt),
-                                                  ancestry=[],
-                                                  subtypes=OrderedDict())
-                flat_type_hierarchy[rt] = type_hierarchy[rt]
-
-        return type_hierarchy, flat_type_hierarchy
-
-    @staticmethod
-    def sort_type_hierarchy_to_sections(type_hierarchy, registered_types):
-        """
-        From the type hierarchy create a list with descriptions of how to organize the types into sections
-
-        :param type_hierarchy: The input type hierarchy as compute by compute_data_type_hierarchy
-        :return: List of DataTypeSections
-
-
-        """
-        sections = []
-        all_types = {k: False for k in registered_types}
-
-        def get_list_of_subtypes(spec, subtypes=None, include_main_type=True, exclude=None):
-            """Compile an OrderedDict of all objects of a given type
-
-            :param spec: Select DataTypeDict object (computed via compute_data_type_hierarchy(..))
-            :param subtypes: OrderedDict with already detected subtypes. Used for recursive detection of types.
-                             Usually just left as None.
-            :param include_main_type: Boolean indicating whether the main type given by spec should be added to the list.
-            :param exclude: List of strings with types to be excluded from the list.
-            """
-            if subtypes is None:
-                subtypes = OrderedDict()
-                if include_main_type:
-                    subtypes[spec['data_type']] = spec
-            for k, v in spec['subtypes'].items():
-                if exclude is None or k not in exclude:
-                    subtypes[k] = v
-                    get_list_of_subtypes(spec=v , subtypes=subtypes, include_main_type=True, exclude=exclude)
-            return subtypes
-
-        def sort_types(types):
-            """
-            Sort the dict  of all objects of a given type by name
-            """
-            re = OrderedDict()
-            for k in sorted(list(types.keys())):
-                re[k] = types[k]
-            return re
-
-        # NWB-File gets its own section
+    # Default load when documenting extensions
+    namespace_catalog = None
+    if default_type_map is not None:
         try:
-            nwb_file_subtypes = get_list_of_subtypes(type_hierarchy['NWBContainer']['subtypes']['NWBFile'])
-        except Exception as e:
-            PrintHelper.print("WARNING: Exception occurred in sorting sections for NWBFile type." + str(e),
-                              PrintHelper.FAIL)
-            nwb_file_subtypes = {}
-        if len(nwb_file_subtypes) > 0:
-            sections.append(DataTypeSection('Main Data File', nwb_file_subtypes))
-            for k in nwb_file_subtypes.keys():
-                all_types[k] = True
+            default_type_map.load_namespaces(namespace_file, resolve=resolve)
+            namespace_catalog = default_type_map.namespace_catalog
+        # When renderning the core spec we'll get a KeyError because it already exists
+        # so we'll load the namespace separately
+        except KeyError:
+           pass
+    # Load the namespace separately if it already exists or we don't have a default type map specified
+    if namespace_catalog is None:
+        namespace_catalog = NamespaceCatalog(default_namespace,
+                                             group_spec_cls=group_spec_cls,
+                                             dataset_spec_cls=dataset_spec_cls,
+                                             spec_namespace_cls=spec_namespace_cls)
+        namespace_catalog.load_namespaces(namespace_file, resolve=resolve)
 
-        # Base types get their own section
-        try:
-            nwb_base_types = OrderedDict()
-            nwb_base_types['NWBContainer'] = type_hierarchy['NWBContainer']
-            nwb_base_types['NWBData'] = type_hierarchy['NWBData']
-            nwb_base_types['NWBDataInterface'] = type_hierarchy['NWBContainer']['subtypes']['NWBDataInterface']
-        except Exception as e:
-            PrintHelper.print("WARNING: Exception occurred in sorting sections for base types." + str(e),
-                              PrintHelper.FAIL)
-            nwb_base_types = {}
-        if len(nwb_base_types) > 0:
-            sections.append(DataTypeSection('Base Types', nwb_base_types))
-            for k in nwb_base_types.keys():
-                all_types[k] = True
-
-        # Time-series get their own section
-        try:
-            time_series_subtypes = get_list_of_subtypes(type_hierarchy['NWBContainer']['subtypes']['NWBDataInterface']['subtypes']['TimeSeries'])
-        except Exception as e:
-            PrintHelper.print("WARNING: Exception occurred in sorting sections for TimeSeries types." + str(e),
-                              PrintHelper.FAIL)
-            time_series_subtypes = {}
-        if len(time_series_subtypes) > 0:
-            sections.append(DataTypeSection('TimeSeries Types', sort_types(time_series_subtypes)))
-            for k in time_series_subtypes.keys():
-                all_types[k] = True
-
-        # Analyse modules get their own section
-        try:
-            nwbcontainer_subtypes = get_list_of_subtypes(type_hierarchy['NWBContainer'], #['subtypes']['NWBDataInterface'])
-                                                         include_main_type=False,
-                                                         exclude=['Device',
-                                                                  'ElectrodeGroup',
-                                                                  'EpochTimeSeries',
-                                                                  'Subject'])
-            _ = nwbcontainer_subtypes.pop('DynamicTable')  # Remove DynamicTable. We don't want exclude it above because then we would miss the subtypes
-        except Exception as e:
-            PrintHelper.print("WARNING: Exception occurred in sorting sections for NWBContainer types." + str(e),
-                              PrintHelper.FAIL)
-            warnings.warn("Exception occurred in sorting sections for NWBContainer types." + str(e))
-            nwbcontainer_subtypes = {}
-        if len(nwbcontainer_subtypes) > 0:
-            data_processing_types = OrderedDict()
-            for k, v in nwbcontainer_subtypes.items():
-                if not all_types[k]:  # Avoid duplicate listing of types
-                    data_processing_types[k] = v
-                    all_types[k] = True
-            sections.append(DataTypeSection('Data Processing', sort_types(data_processing_types)))
-
-        # Base types get their own section
-        try:
-            nwb_primitive_types = OrderedDict()
-            nwb_primitive_types['Index'] = type_hierarchy['NWBData']['subtypes']['Index']
-            nwb_primitive_types['VectorData'] = type_hierarchy['NWBData']['subtypes']['VectorData']
-            nwb_primitive_types['VectorIndex'] = type_hierarchy['NWBData']['subtypes']['Index']['subtypes']['VectorIndex']
-            nwb_primitive_types['ElementIdentifiers'] = type_hierarchy['NWBData']['subtypes']['ElementIdentifiers']
-            nwb_primitive_types['DynamicTable'] = type_hierarchy['NWBContainer']['subtypes']['NWBDataInterface']['subtypes']['DynamicTable']
-            nwb_primitive_types['DynamicTableRegion'] = type_hierarchy['NWBData']['subtypes']['VectorData']['subtypes']['DynamicTableRegion']
-        except Exception as e:
-            PrintHelper.print("WARNING: Exception occurred in sorting sections for primitve data structure types." + str(e),
-                              PrintHelper.FAIL)
-            nwb_primitive_types = {}
-        if len(nwb_primitive_types) > 0:
-            sections.append(DataTypeSection('Primitive Types and Data Structures', nwb_primitive_types))
-            for k in nwb_primitive_types.keys():
-                all_types[k] = True
-
-
-        # Section for all other data types that have not been sorted into the hierarchy yet.
-        other_types = OrderedDict()
-        for k, v in all_types.items():
-            if not v:
-                other_types[k] = v
-        if len(other_types) > 0:
-            sections.append(DataTypeSection('Other Types', sort_types(other_types)))
-            for k in other_types:
-                all_types[k] = True
-
-        # Check that all types have been covered
-        for k, v in all_types.items():
-            if not v:
-                PrintHelper.print("WARNING: %s missing in type hierarchy" % str(v), PrintHelper.WARNING)
-
-        # Return the list of our sections
-        return sections
-
-    @staticmethod
-    def print_type_hierarchy(type_hierarchy, depth=0, show_ancestry=False):
-        """
-        Helper function used to print a hierarchy of data_types
-
-        :param show_ancestry: Boolean indicating whether the ancestry of a type should be included in the print
-        :param type_hierarchy: OrderedDict containtin for each type a dict with the 'spec' and OrderedDict of 'substype'
-        :param depth: Recursion depth of the print used to indent the hierarchy
-        """
-        for k, v in type_hierarchy.items():
-            msg = k
-            if show_ancestry and len(v['ancestry']) > 0:
-                msg += '      ancestry=' + str(v['ancestry'])
-            PrintHelper.print(msg, PrintHelper.OKBLUE + PrintHelper.BOLD if depth == 0 else PrintHelper.OKBLUE, depth)
-            SchemaHelper.print_type_hierarchy(v['subtypes'], depth=depth+1, show_ancestry=show_ancestry)
-
-    @staticmethod
-    def print_sections(type_sections):
-        """
-        Helper function to print sorting of data_type to sections
-
-        :param type_sections: OrderedDict of sections created by the function sort_type_hierarchy_to_sections(...)
-        :return:
-        """
-        for sec in type_sections:
-            PrintHelper.print(sec['title'], PrintHelper.OKBLUE+PrintHelper.BOLD)
-            PrintHelper.print(str(list(sec['data_types'].keys())), PrintHelper.OKBLUE)
-
-
-
-########################################################
-#  Internal dictionary data structures
-########################################################
-class DataTypeDict(dict):
-    """Dict used to describe a data type"""
-    def __init__(self, data_type, spec, ancestry, subtypes):
-        self['data_type'] = data_type
-        self['spec'] = spec
-        self['ancestry'] = ancestry
-        self['subtypes'] = subtypes
-
-
-class DataTypeSection(dict):
-    """
-    Dict describing a set of data_types that should be grouped in a section in the documentation
-    """
-    def __init__(self, title, data_types=None, intro=None):
-        """
-
-        :param title: String with the title of the section
-        :param data_types: None or OrderedDict where the keys are data_types and the values
-                                are DataTypeDict
-        :param intro: None or RSTDocument with introductory text for the section.
-        """
-        self['title'] = title
-        self['data_types'] = OrderedDict() if data_types is None else data_types
-        self['intro'] = intro
+    return namespace_catalog
 
 
 ########################################################
@@ -487,490 +138,21 @@ class RenderDocsHelper(object):
     """
     Helper class collecting functions for creating Sphinx RST documents from format specifications
     """
-    @staticmethod
-    def render_data_type(dtype):
-        """
-        Create a text representation of the data type
-
-        :param dtype: data type object as returned by the spec. Which may be a list (in the case of compound types),
-               a dict in the case of reference types, or a string in the case of primitive types.
-        :return: RST string describing the data type.
-        """
-        if isinstance(dtype, list):
-            res = "Compound data type with the following elements: \n"
-            for item in dtype:
-                res += "    * **%s:** %s (*dtype=* %s ) \n" % (item['name'],
-                                                               item['doc'],
-                                                               RenderDocsHelper.render_data_type(item['dtype']))
-            res += "\n"
-            return res
-        elif isinstance(dtype, RefSpec):
-            res = "%s reference to %s" % (dtype['reftype'],
-                                          RSTDocument.get_reference(LabelHelper.get_section_label(dtype['target_type']),
-                                                                    dtype['target_type']))
-            return res
-        else:
-            return str(dtype)
 
     @staticmethod
-    def render_specification_properties(spec, newline='\n', ignore_props=None, prepend_items=None, append_items=None):
-        """
-        Create a list with the properties from the spec rendered as RST
-
-        :param spec: The GroupSpec, DatasetSpec, AttributeSpec, or LinkSpec object
-        :param newline: String to be used for newline
-        :param ignore_props: List of strings of property keys we should ignore
-        :param prepend_items: List of strings with additional items to be added to the beginning of the list of properties
-        :param append_items: List of strings with additional items to be added to the end of the list of properties
-        :return: String with the rendered list of properties of the specification
-        """
-
-        spec_prop_list = []
-        if prepend_items is not None:
-            spec_prop_list += prepend_items
-        ignore_keys = [] if ignore_props is None else ignore_props
-        # Add link properties
-        if isinstance(spec, LinkSpec):
-            spec_prop_list.append('**Target Type** %s' % RSTDocument.get_reference(LabelHelper.get_section_label(spec['target_type']), spec['target_type']))
-        # Add dataset properties
-        if isinstance(spec, DatasetSpec):
-            if spec.get(spec_def_key, None) is not None and spec_def_key not in ignore_keys:
-                spec_prop_list.append('**Neurodata Type:** %s' % str(spec[spec_def_key]))
-            if spec.get(spec_inc_key, None) is not None and spec_inc_key not in ignore_keys:
-                extend_type = str(spec[spec_inc_key])
-                spec_prop_list.append('**Extends:** %s' %  RSTDocument.get_reference(LabelHelper.get_section_label(extend_type), extend_type))
-            if 'primitive_type' not in ignore_keys:
-                spec_prop_list.append('**Primitive Type:** %s' % SchemaHelper.get_primitive_spectype(spec))
-            if spec.get('quantity', None) is not None and 'quantity' not in ignore_keys:
-                spec_prop_list.append('**Quantity:** %s' % SchemaHelper.quantity_to_string(spec['quantity']))
-            if spec.get('dtype', None) is not None and 'dtype' not in ignore_keys:
-                spec_prop_list.append('**Data Type:** %s' % RenderDocsHelper.render_data_type(spec['dtype']))
-            if spec.get('dims', None) is not None and 'dims' not in ignore_keys:
-                spec_prop_list.append('**Dimensions:** %s' % str(spec['dims']))
-            if spec.get('shape', None) is not None  and 'shape' not in ignore_keys:
-                spec_prop_list.append('**Shape:** %s' % str(spec['shape']))
-            if spec.get('linkable', None) is not None  and 'linnkable' not in ignore_keys:
-                spec_prop_list.append('**Linkable:** %s' % str(spec['linkable']))
-        # Add group properties
-        if isinstance(spec, GroupSpec):
-            if spec.get(spec_def_key, None) is not None and spec_def_key not in ignore_keys:
-                ntype = str(spec[spec_def_key])
-                spec_prop_list.append('**Neurodata Type:** %s' % RSTDocument.get_reference(LabelHelper.get_section_label(ntype), ntype))
-            if spec.get(spec_inc_key, None) is not None and spec_inc_key not in ignore_keys:
-                extend_type = str(spec[spec_inc_key])
-                spec_prop_list.append('**Extends:** %s' %  RSTDocument.get_reference(LabelHelper.get_section_label(extend_type), extend_type))
-            if 'primitive_type' not in ignore_keys:
-                spec_prop_list.append('**Primitive Type:** %s' % SchemaHelper.get_primitive_spectype(spec))
-            if spec.get('quantity', None) is not None and 'quantity' not in ignore_keys:
-                spec_prop_list.append('**Quantity:** %s' % SchemaHelper.quantity_to_string(spec['quantity']))
-            if spec.get('linkable', None) is not None and 'linkable' not in ignore_keys:
-                spec_prop_list.append('**Linkable:** %s' % str(spec['linkable']))
-        # Add attribute spec properites
-        if isinstance(spec, AttributeSpec):
-            if 'primitive_type' not in ignore_keys:
-                spec_prop_list.append('**Primitive Type:** %s' % SchemaHelper.get_primitive_spectype(spec))
-            if spec.get('dtype', None) is not None and 'dtype' not in ignore_keys:
-                spec_prop_list.append('**Data Type:** %s' % RenderDocsHelper.render_data_type(spec['dtype']))
-            if spec.get('dims', None) is not None  and 'dims' not in ignore_keys:
-                spec_prop_list.append('**Dimensions:** %s' % str(spec['dims']))
-            if spec.get('shape', None) is not None  and 'shape' not in ignore_keys:
-                spec_prop_list.append('**Shape:** %s' % str(spec['shape']))
-            if spec.get('required', None) is not None and 'required' not in ignore_keys:
-                spec_prop_list.append('**Reuqired:** %s' % str(spec['required']))
-            if spec.get('value', None) is not None and 'value' not in ignore_keys:
-                spec_prop_list.append('**Value:** %s' % str(spec['value']))
-            if spec.get('default_value', None) is not None and 'default_value' not in ignore_keys:
-                spec_prop_list.append('**Default Value:** %s' % str(spec['default_value']))
-
-        # Add common properties
-        if spec.get('default_name', None) is not None:
-                spec_prop_list.append('**Default Name:** %s' % str(spec['default_name']))
-        if spec.get('name', None) is not None:
-            spec_prop_list.append('**Name:** %s' % str(spec['name']))
-
-        # Add custom items if necessary
-        if append_items is not None:
-            spec_prop_list += append_items
-
-        # Render the specification properties list
-        spec_doc = ''
-        if len(spec_prop_list) > 0:
-            spec_doc += newline
-            for dp in spec_prop_list:
-                spec_doc += newline + '- ' + dp
-            spec_doc += newline
-        # Return the rendered list
-        return spec_doc
-
-    @staticmethod
-    def render_namespace(namespace_catalog,
-                         namespace_name=None,
-                         desc_doc=None,
-                         src_doc=None,
-                         show_yaml_src=True,
-                         file_dir=None,
-                         file_per_type=False,
-                         type_hierarchy_include=None,
-                         type_hierarchy_include_in_html_only=True):
-        """
-        Render the description of the namespace
-
-        :param namespace_catalog: NamespaceCatalog object with the namespaces
-        :param desc_doc: RSTDocument where the description should be rendered. Set to None to not render a description.
-        :param src_doc: RSTDocument where the sources of the namespace should be rendered. Set to None to not render a namepsace.
-        :param namespace_name: Name of the namespace to be rendered. Set to None if the default namespace should be used
-        :param show_yaml_src: Boolean indicating that we should render the YAML source in the src_doc
-        :param file_dir: Directory where output RST docs should be stored. Required if file_per_type is True.
-        :param file_per_type: Generate a seperate rst files for each data_type and include them
-                              in the src_doc and desc_doc (True). If set to False then write the
-                              contents to src_doc and desc_doc directly.
-        :param type_hierarchy_include: Optional include file with the hierarchy of types in the namespace
-        :param type_hierarchy_include_in_html_only: Add type hierarchy to html only, e.g., to avoid too deeply nested
-                              errors in the context of LaTeX builds.
-
-        """
-        # Determine file settings
-        if src_doc is None:
-            seperate_src_file = False
-            if show_yaml_src:
-                src_doc = desc_doc
-        else:
-            seperate_src_file = True
-
-        # Create target RST files if necessary
-        ns_desc_doc = desc_doc if not file_per_type else RSTDocument()
-        ns_src_doc  = src_doc if not file_per_type else RSTDocument()
-        ns_desc_label = "nwb-type-namespace-doc"
-        ns_src_label = "nwb-type-namespace-src"
-        # Create the target doc
-        if namespace_name is None:
-            namespace_name = namespace_catalog.default_namespace
-        curr_namespace = namespace_catalog.get_namespace(namespace_name)
-        # Section heading
-
-        subsec_heading = "Namespace -- %s" % curr_namespace['full_name'] if 'full_name' in curr_namespace else curr_namespace['name']
-        # Render the description of the namespace
-        if desc_doc:
-            # Add section heading
-            ns_desc_doc.add_section("Format Overview")
-            # Add a subsection for the Namespace
-            ns_desc_doc.add_label(ns_desc_label)
-            ns_desc_doc.add_subsection(subsec_heading)
-            # Add a link to the source specification
-            if seperate_src_file:
-                ns_src_doc.add_text('**Source Specification:** see %s %s %s' % (ns_src_doc.get_numbered_reference(ns_src_label),
-                                                                                ns_src_doc.newline,
-                                                                                ns_src_doc.newline))
-            # Create a list with further details about the namespace, e.g., name, version, authors etc.
-            desc_list = []
-            if 'doc' in curr_namespace:
-                desc_list.append('**Description:** %s' % str(curr_namespace['doc']))
-            if 'name' in curr_namespace:
-                desc_list.append('**Name:** %s' % str(curr_namespace['name']))
-            if 'full_name' in curr_namespace:
-                desc_list.append('**Full Name:** %s' % str(curr_namespace['full_name']))
-            if 'version' in curr_namespace:
-                desc_list.append('**Version:** %s' % str(curr_namespace['version']))
-            if 'date' in curr_namespace:
-                desc_list.append('**Date:** %s' % str(curr_namespace['date']))
-            if 'author' in curr_namespace:
-                if isinstance(curr_namespace['author'], list):
-                    desc_list.append('**Authors:**')
-                    desc_list.append(curr_namespace['author'])
-                else:
-                    desc_list.append('**Author:** %s' % str(curr_namespace['author']))
-            if 'contact' in curr_namespace:
-                if isinstance(curr_namespace['contact'], list):
-                    desc_list.append('**Contacts:**')
-                    desc_list.append(curr_namespace['contact'])
-                else:
-                    desc_list.append('**Contact:** %s' % str(curr_namespace['contact']))
-            if 'schema' in curr_namespace:
-                desc_list.append('**Schema:**')
-                schema_list =[]
-                for s in curr_namespace['schema']:
-                    curr_str = ""
-                    if isinstance(s, dict):
-                        for k,v in s.items():
-                            curr_str += '**%s:** %s ' %(str(k), str(v))
-                    else:
-                        curr_str = str(s)
-                    schema_list.append(curr_str)
-                desc_list.append(schema_list)
-            # Render the list with the descripiton of the namespace
-            if len(desc_list) > 0:
-                ns_desc_doc.add_list(desc_list,
-                                     item_symbol='-'
-                                     )
-        # Include the type hierarchy document if requested
-        if type_hierarchy_include:
-            if type_hierarchy_include_in_html_only:
-                ns_desc_doc.add_text('.. only:: html %s%s' % (ns_desc_doc.newline, ns_desc_doc.newline))
-                ns_desc_doc.add_include(type_hierarchy_include, indent='    ')
-                ns_desc_doc.add_text(ns_desc_doc.newline)
-            else:
-                ns_desc_doc.add_include(type_hierarchy_include)
-
-        if src_doc:
-            if seperate_src_file:
-                ns_src_doc.add_label(ns_src_label)
-                ns_src_doc.add_subsection(subsec_heading)
-                ns_src_doc.add_text('**Description:** see %s' % ns_src_doc.get_numbered_reference(ns_desc_label) + ns_src_doc.newline + ns_src_doc.newline)
-            if show_yaml_src:
-                ns_src_doc.add_text('**YAML Specification:**' + ns_src_doc.newline + ns_src_doc.newline)
-                ns_src_doc.add_spec(curr_namespace)
-
-        # Save the output files if necessary
-        if file_per_type and file_dir is not None:
-            # Write the files for the source and description
-            ns_src_filename = os.path.join(file_dir, '%s_namespace_source.inc' % namespace_name)
-            ns_desc_filename = os.path.join(file_dir, '%s_namespace_description.inc' % namespace_name)
-            if desc_doc:
-                ns_desc_doc.write(ns_desc_filename, 'w')
-                PrintHelper.print("    " + namespace_name + '-- WRITE NAMESPACE DESCRIPTION DOC OK.', PrintHelper.OKGREEN)
-                # Include the files in the main documents
-                desc_doc.add_include(os.path.basename(file_dir) + "/" + os.path.basename(ns_desc_filename))
-            if src_doc:
-                ns_src_doc.write(ns_src_filename, 'w')
-                PrintHelper.print("    " + namespace_name + '-- WRITE NAMESPACE SOURCE DOC OK.', PrintHelper.OKGREEN)
-                # Include the files in the main documents
-                src_doc.add_include(os.path.basename(file_dir) + "/" + os.path.basename(ns_src_filename))
-
-    @staticmethod
-    def render_type_hierarchy(type_hierarchy,
-                              target_doc=None,
-                              section_label='data_type_hierarchy',
-                              subsection_title='Type Hierarchy'):
-        """
-        Render the flattened type hierarhcy
-
-        :param type_hierarchy The type hierarchy to rendered
-        :param target_doc: Target RST document where the type hierarchy should be rendered or None if a new document
-                           should be created.
-        :param parent_doc: Document where the type hierarchy should be included (or None)
-        :param section_label: String with the label for the section (or None if no label should be addded)
-        :param subsection_title: String with the title for the secton (or None if no section should be added)
-
-        :returns: RSTDocument with the type hierarchy
-        """
-        target_doc = RSTDocument() if target_doc is None else target_doc
-        if section_label:
-            target_doc.add_label(section_label)
-        if subsection_title:
-            target_doc.add_subsection(subsection_title)
-
-        def add_sub_hierarchy(outdoc, type_hierarchy, depth=0, show_ancestry=False, indent_step='   '):
-            """
-            Helper function used to print a hierarchy of data_types
-            :param type_hierarchy: OrderedDict containtin for each type a dict with the 'spec' and OrderedDict of 'substype'
-            :param depth: Recursion depth of the print used to indent the hierarchy
-            """
-            for k, v in type_hierarchy.items():
-                type_list_item = indent_step*depth + '* '
-                type_list_item += outdoc.get_reference(LabelHelper.get_section_label(k), k)
-                if show_ancestry:
-                    type_list_item += '      ancestry=' + str(v['ancestry'])
-                type_list_item += outdoc.newline
-                outdoc.add_text(type_list_item)
-                if len(v['subtypes']) > 0:
-                    outdoc.add_text(outdoc.newline)
-                    add_sub_hierarchy(outdoc=outdoc,
-                                      type_hierarchy=v['subtypes'],
-                                      depth=depth+1,
-                                      show_ancestry=show_ancestry,
-                                      indent_step=indent_step)
-
-        # Render the hierarchy
-        add_sub_hierarchy(outdoc=target_doc,
-                          type_hierarchy=type_hierarchy)
-        target_doc.add_text(target_doc.newline + target_doc.newline)
-
-        # return the document
-        return target_doc
-
-    @staticmethod
-    def create_spec_table(spec,
-                          rst_table=None,
-                          depth=0,
-                          show_subattributes=True,
-                          show_subdatasets=True,
-                          show_sublinks=True,
-                          show_subgroups=False,
-                          recursive=False,
-                          appreviate_main_object_doc=True):
-        """
-        Create an RSTTable with an overview of the specification for the given spec
-
-        :param spec: The specification to be rendered
-        :param rst_table: The RSTTable to be expanded (usually None). This argument is used to recursively fill the table.
-        :param depth: The depth at which the current spec should appear in the table. This argument is used to
-                      recursively fill the table and will typically left as 0 when called externally.
-        :param show_subgroups: Boolean indicating whether to recursively include subgroups (default=False)
-        :return: RSTTable that can be rendered into and RSTDocuement via the RSTTable.render(...) function.
-        """
-        # Create a new table if necessary
-        rst_table = rst_table if rst_table is not None else RSTTable(cols=['Id', 'Type', 'Description']) #, ' Quantity'])
-
-        ###########################################
-        #  Render the row for the current object
-        ###########################################
-        # Determine the type of the object
-        spec_type = 'group' if isinstance(spec, GroupSpec) else \
-                    'dataset'if isinstance(spec, DatasetSpec) else \
-                    'attribute' if isinstance(spec, AttributeSpec) else \
-                    'link'
-        # Determine the name of the object
-        depth_str = spec_table_depth_char * depth
-        if spec.get('name', None) is not None:
-            spec_name = depth_str + spec.name
-        elif spec.get(spec_def_key,None) is not None:
-            spec_name = depth_str +  '<%s>' % spec[spec_def_key]
-        elif spec_type == 'link':
-            spec_name = depth_str +  '<%s>' % RSTDocument.get_reference(LabelHelper.get_section_label(spec[spec_inc_key]), spec[spec_inc_key])
-        elif spec.get(spec_inc_key, None) is not None:
-            spec_name = depth_str +  '<%s>' % RSTDocument.get_reference(LabelHelper.get_section_label(spec[spec_inc_key]), spec[spec_inc_key])
-        else:
-            spec_name = depth_str +  '<%s>' % RSTDocument.get_reference(LabelHelper.get_section_label(spec[spec_type_key]), spec[spec_type_key])
-        spec_quantity = SchemaHelper.quantity_to_string(spec.quantity) \
-                        if not (isinstance(spec, AttributeSpec) or isinstance(spec, LinkSpec)) \
-                        else ""
-
-        # Create the doc description of the spec
-        if appreviate_main_object_doc and depth==0:
-            # Create the appreviated descripiton of the main object
-            spec_doc = "Top level %s for %s" % (spec_type, spec_name.lstrip(depth_str))
-            spec_doc += RenderDocsHelper.render_specification_properties(spec, rst_table.newline, ignore_props=['primitive_type'])
-        else:
-            # Create the description for the object
-            spec_doc = SchemaHelper.clean_schema_doc_string(spec.doc, add_prefix=rst_table.newline + rst_table.newline)
-            # Create the list of additonal object properties to be added as a list ot the doc
-            spec_doc += RenderDocsHelper.render_specification_properties(spec, rst_table.newline, ignore_props=['primitive_type'])
-
-        # Render the object to the table
-        rst_table.add_row(row_values=[spec_name, spec_type, spec_doc], #, spec_quantity],
-                          replace_none='',
-                          convert_to_str=True)
-
-        ###########################################
-        #  Recursively add the subobject if requested
-        ###########################################
-        # Recursively add all attributes of the current spec
-        if (isinstance(spec, DatasetSpec) or isinstance(spec, GroupSpec)) and show_subattributes:
-            for a in spec.attributes:
-                RenderDocsHelper.create_spec_table(a, rst_table, depth=depth + 1)
-        # Recursively add all Datasets of the current spec
-        if isinstance(spec, GroupSpec) and show_subdatasets:
-            for d in spec.datasets:
-                RenderDocsHelper.create_spec_table(d, rst_table, depth=depth + 1)
-        # Recursively add all Links for the current spec
-        if isinstance(spec,GroupSpec) and show_sublinks:
-            for l in spec.links:
-                RenderDocsHelper.create_spec_table(l, rst_table, depth=depth + 1)
-        # Recursively add all subgroups if requested
-        if show_subgroups and isinstance(spec, GroupSpec):
-            if recursive:
-                for g in spec.groups:
-                    RenderDocsHelper.create_spec_table(g,
-                                         rst_table,
-                                         depth=depth+1,
-                                         show_subgroups=show_subgroups,
-                                         show_subdatasets=show_subdatasets,
-                                         show_subattributes=show_subattributes)
-            else:
-                for g in spec.groups:
-                    RenderDocsHelper.create_spec_table(g, rst_table,
-                                         depth=depth+1,
-                                         recursive=recursive,
-                                         show_subgroups=False,
-                                         show_subattributes=False,
-                                         show_subdatasets=False)
-        # Return the created table
-        return rst_table
-
-    @staticmethod
-    def render_group_specs(group_spec, rst_doc, parent=None):
-
-        parent = parent if parent is not None else ''
-        group_name = ''
-        if group_spec.get('name', None) is not None:
-            group_name = group_spec.name
-        elif group_spec.get(spec_def_key, None) is not None:
-            group_name = "<%s>" % group_spec[spec_def_key]
-        elif group_spec.get(spec_inc_key, None) is not None:
-            group_name =  "<%s>" % group_spec[spec_inc_key]
-        else:
-            warnings.warn("Could not determine name for group %s" % str(group_spec))
-        if group_name == '':
-            raise ValueError('Could not determine name of group')
-        rst_doc.add_paragraph("Groups: %s%s" % (parent,group_name))
-        # Compile the documentation for the group
-        gdoc = SchemaHelper.clean_schema_doc_string(group_spec.doc,
-                                       add_prefix=rst_doc.newline+rst_doc.newline,  #+' ',
-                         add_postifix=rst_doc.newline,
-                                       rst_format='**')
-
-        gdoc += rst_doc.newline
-        gdoc += RenderDocsHelper.render_specification_properties(group_spec, rst_doc.newline, ignore_props=['primitive_type'])
-        # Add the group documentation to the RST document
-        rst_doc.add_text(gdoc)
-        rst_doc.add_text(rst_doc.newline)
-        # Create the table with the dataset and attributes specifications for the group
-        group_spec_data_table = RenderDocsHelper.create_spec_table(group_spec,
-                                                     show_subgroups=not spec_show_subgroups_in_seperate_table,
-                                                     appreviate_main_object_doc=spec_appreviate_main_object_doc_in_tables)
-                                             #, table_class='longtable', widths=[15, 15, 60 ,10])
-        # Add the table for the group spec only if there is more than one entry, i.e.,
-        # only if there is additonal information in the table about the content of the group, rather
-        # than just only the group itself in the table
-        if group_spec_data_table.num_rows() > 1:
-            group_spec_data_table_title = None
-            if spec_show_title_for_tables:
-                if not spec_show_subgroups_in_seperate_table:
-                    group_spec_data_table_title = "Groups, Datasets, and Attributes contained in ``%s%s``" % (parent,group_name)
-                else:
-                    group_spec_data_table_title = "Datasets, Links, and Attributes contained in ``%s%s``" % (parent,group_name)
-            rst_doc.add_table(rst_table=group_spec_data_table,
-                              title=group_spec_data_table_title,
-                              latex_tablecolumns=CUSTOM_LATEX_TABLE_COLUMNS)
-                              # table_ref=LabelHelper.get_data_table_label(group_name))
-
-        # Add a table with all the subgroups of this group
-        if spec_show_subgroups_in_seperate_table:
-            group_spec_groups_table = RenderDocsHelper.create_spec_table(group_spec,
-                                                           show_subattributes=False,
-                                                           show_subdatasets=False,
-                                                           show_subgroups=True,
-                                                           recursive=False,
-                                                           appreviate_main_object_doc=spec_appreviate_main_object_doc_in_tables)
-            # Only show the subgroups if it contains additional information
-            if group_spec_groups_table.num_rows() > 1:
-                group_spec_groups_table_title = None
-                if spec_show_title_for_tables:
-                    group_spec_groups_table_title = "Groups contained in <%s>" % group_name
-                rst_doc.add_table(group_spec_groups_table,
-                                  title=group_spec_groups_table_title,
-                                  latex_tablecolumns=CUSTOM_LATEX_TABLE_COLUMNS)
-                                  # table_ref=LabelHelper.get_group_table_label(group_name))
-
-
-        # Recursively render paragraphs for all the subgroups of this group
-        for sg in group_spec.groups:
-            RenderDocsHelper.render_group_specs(sg, rst_doc, parent=parent+group_name+'/')
-
-    @staticmethod
-    def render_specs(data_types,
-                     spec_catalog,
-                     desc_doc,
-                     src_doc,
-                     file_dir,
-                     show_hierarchy_plots=True,
-                     show_yaml_src=True,
-                     file_per_type=False):
+    def render_data_type_section(section,
+                                 spec_catalog,
+                                 desc_doc,
+                                 src_doc,
+                                 file_dir,
+                                 show_hierarchy_plots=True,
+                                 show_yaml_src=True,
+                                 file_per_type=False,
+                                 print_status=True):
         """
         Render the documentation for a set of data_types defined in a spec_catalog
 
-        :param data_types: List of string with the names of types that should be rendered or OrderedDict where
-                           the keys are data_type strings and the values are DataTypeDict
+        :param section: The DataTypeSection to be rendered to the given RST documents
         :param spec_catalog: Catalog of specifications
         :param desc_doc: RSTDocument where the descriptions of the documents should be rendered
         :param src_doc: RSTDocument where the YAML sources of the data_types should be rendered. Set to None
@@ -981,18 +163,41 @@ class RenderDocsHelper(object):
         :param file_per_type: Generate a seperate rst files for each data_type and include them
                               in the src_doc and desc_doc (True). If set to False then write the
                               contents to src_doc and desc_doc directly.
+        :param print_status: Bool indicating whether to print progress and debugging messages to standard out
 
         """
+        # Determine where the YAML source should be rendered
         if src_doc is None:
             seperate_src_file = False
             src_doc = desc_doc
         else:
             seperate_src_file = True
 
-        for rt in data_types:
-            print("BUILDING %s" % rt)
+        # Render the heading for the section
+        # Add labels and tile for the subsections in the description and source RSTDocuments
+        desc_doc.add_label(section.title.replace(' ', '_'))
+        desc_doc.add_subsection(section.title)
+        if seperate_src_file:
+            src_doc.add_label(section.title.replace(' ', '_') + '_src')
+            src_doc.add_subsection(section.title)
+
+        # Render the introduction for the section
+        if section.intro is not None and section.intro != '':
+            desc_doc.add_text(section.intro)
+            desc_doc.add_text(desc_doc.newline + desc_doc.newline)
+            if seperate_src_file:
+                src_doc.add_text(section.intro)
+                src_doc.add_text(src_doc.newline + desc_doc.newline)
+
+        # Render the subsubsections for all the individual data types
+        for rt in section.data_types:
+            if print_status:
+                PrintHelper.print("BUILDING %s" % rt, PrintHelper.BOLD)
             # Get the spec
             rt_spec = spec_catalog.get_spec(rt)
+            rt_ancestry = spec_catalog.get_hierarchy(rt)
+            rt_subtypes = spec_catalog.get_subtypes(rt)
+            rt_source_file = spec_catalog.get_spec_source_file(rt)
             # Check if the spec extends another spec
             extend_type =   rt_spec.get(spec_inc_key, None)
             # Define the docs we need to write to
@@ -1008,10 +213,10 @@ class RenderDocsHelper(object):
             type_desc_doc.add_subsubsection(section_heading)
             type_desc_doc.add_text('**Overview:** ')# + type_desc_doc.newline + type_desc_doc.newline)
             # Add the document string for the data_type to the document
-            rt_clean_doc = SchemaHelper.clean_schema_doc_string(rt_spec['doc'],
-                                                   add_prefix=type_desc_doc.newline+type_desc_doc.newline,
-                                                   add_postifix=type_desc_doc.newline,
-                                                   rst_format='**')
+            rt_clean_doc = SpecToRST.clean_schema_doc_string(rt_spec['doc'],
+                                                             add_prefix=type_desc_doc.newline+type_desc_doc.newline,
+                                                             add_postifix=type_desc_doc.newline,
+                                                             rst_format='**')
             type_desc_doc.add_text(rt_clean_doc)
             type_desc_doc.add_text(type_desc_doc.newline + type_desc_doc.newline)
             # Add note if necessary to indicate that the following documentation only shows changes to the parent class
@@ -1028,17 +233,37 @@ class RenderDocsHelper(object):
                               sentence_end))
                 type_desc_doc.add_text(type_desc_doc.newline + type_desc_doc.newline)
 
-            # Add the additional details about the doc
-            additional_props = []
+            # Define the additional details about the doc to be rendered in the overview
+            ignore_props = [spec_def_key, 'default_name', 'name']   # Properties from the spec to be ignored here
+            additional_props = [] # Additional properties that should be shown
+            # Add list of the types this type inherits from. The ancestry always includes the type itself as first
+            # entry, so we ignore the inheritance if the ancestry is only the type itself.
+            if len(rt_ancestry) > 1:
+                additional_props.append(
+                    '**Inherits from:** %s' %
+                    ", ".join([type_desc_doc.get_reference(LabelHelper.get_section_label(ct), ct)
+                               for ct in rt_ancestry[1:]]))
+            # Add list of all the subtypes of this type
+            if len(rt_subtypes) > 0:
+                additional_props.append(
+                    '**Subtypes:** %s' %
+                    ", ".join([type_desc_doc.get_reference(LabelHelper.get_section_label(ct), ct)
+                               for ct in rt_subtypes]))
+            # Add name of the source file
+            additional_props.append('**Source filename:** %s' % rt_source_file)
+            # Add a link to the source if rendered separately
             if seperate_src_file:
-                # Add a link to the source to the main documentQuant
-                additional_props.append('**Source Specification:** see %s' %
-                                        type_desc_doc.get_numbered_reference(label=LabelHelper.get_src_section_label(rt, spec_generate_src_file, spec_show_yaml_src)))
+                additional_props.append(
+                    '**Source Specification:** see %s' %
+                    type_desc_doc.get_numbered_reference(
+                        label=LabelHelper.get_src_section_label(rt,
+                                                                spec_generate_src_file, spec_show_yaml_src)))
 
-            type_desc_doc.add_text(RenderDocsHelper.render_specification_properties(rt_spec,
-                                                                            type_desc_doc.newline,
-                                                                            ignore_props=[spec_def_key, 'default_name', 'name'],
-                                                                            append_items=additional_props))
+            # Render the propoerties of the spec as part of the overview
+            type_desc_doc.add_text(SpecToRST.render_specification_properties(rt_spec,
+                                                                             type_desc_doc.newline,
+                                                                             ignore_props=ignore_props,
+                                                                             append_items=additional_props))
             type_desc_doc.add_text(type_desc_doc.newline)
 
             ##################################################
@@ -1068,18 +293,26 @@ class RenderDocsHelper(object):
                                         pad_inches = 0)
                             plt.close()
                             type_desc_doc.add_figure(img='./_format_auto_docs/'+rt+".*", alt=rt)
-                            PrintHelper.print("    " + rt + '-- RENDER OK.', PrintHelper.OKGREEN)
+                            if print_status:
+                                PrintHelper.print("    " + rt + '-- RENDER OK.',
+                                                  PrintHelper.OKGREEN)
                         else:
-                           PrintHelper.print("    " + rt + '-- SKIPPED RENDER HIERARCHY. TWO OR FEWER NODES.', PrintHelper.OKBLUE)
+                            if print_status:
+                                PrintHelper.print("    " + rt + '-- SKIPPED RENDER HIERARCHY. TWO OR FEWER NODES.',
+                                                  PrintHelper.OKBLUE)
                     else:
-                        PrintHelper.print("    " + rt + '-- SKIPPED RENDER HIERARCHY. See conf.py', PrintHelper.OKBLUE)
+                        if print_status:
+                            PrintHelper.print("    " + rt + '-- SKIPPED RENDER HIERARCHY. See conf.py',
+                                              PrintHelper.OKBLUE)
                 except (KeyboardInterrupt, SystemExit):
                     raise
                 except:
-                    PrintHelper.print(rt + '-- RENDER HIERARCHY FAILED', PrintHelper.FAIL)
+                    PrintHelper.print(rt + '-- RENDER HIERARCHY FAILED',
+                                      PrintHelper.FAIL)
             else:
                 if show_hierarchy_plots:
-                    PrintHelper.print(rt + '-- RENDER HIERARCHY FAILED DUE TO MISSING PACKAGES', PrintHelper.FAIL)
+                    PrintHelper.print(rt + '-- RENDER HIERARCHY FAILED DUE TO MISSING PACKAGES',
+                                      PrintHelper.FAIL)
 
             ####################################################################
             #  Add the YAML sources to the document if requested
@@ -1103,9 +336,11 @@ class RenderDocsHelper(object):
             #  Add table with dataset and attribute descriptions for the data_type
             ############################################################################
             type_desc_doc.add_text(type_desc_doc.newline)
-            rt_spec_data_table = RenderDocsHelper.create_spec_table(rt_spec,
-                                                      show_subgroups=not spec_show_subgroups_in_seperate_table,
-                                                      appreviate_main_object_doc=spec_appreviate_main_object_doc_in_tables)
+            rt_spec_data_table = SpecToRST.render_spec_table(
+                spec=rt_spec,
+                depth_char=spec_table_depth_char,
+                show_subgroups=not spec_show_subgroups_in_seperate_table,
+                appreviate_main_object_doc=spec_appreviate_main_object_doc_in_tables)
             # Only show the datasets and attributes table if it contains additional information
             if rt_spec_data_table.num_rows() > 1:
                 rt_spec_data_table_title = None
@@ -1124,12 +359,14 @@ class RenderDocsHelper(object):
             ############################################################################
             if spec_show_subgroups_in_seperate_table:
                 type_desc_doc.add_text(type_desc_doc.newline)
-                rt_spec_group_table = RenderDocsHelper.create_spec_table(rt_spec,
-                                                           show_subattributes=False,
-                                                           show_subdatasets=False,
-                                                           show_subgroups=True,
-                                                           recursive=False,
-                                                           appreviate_main_object_doc=spec_appreviate_main_object_doc_in_tables)
+                rt_spec_group_table = SpecToRST.render_spec_table(
+                    spec=rt_spec,
+                    depth_char=spec_table_depth_char,
+                    show_subattributes=False,
+                    show_subdatasets=False,
+                    show_subgroups=True,
+                    recursive_subgroups=False,
+                    appreviate_main_object_doc=spec_appreviate_main_object_doc_in_tables)
                 # Only show the datasets and attributes table if it contains additional information
                 if rt_spec_group_table.num_rows() > 1:
                     rt_spec_group_table_title = None
@@ -1145,10 +382,16 @@ class RenderDocsHelper(object):
             #####################################################
             if isinstance(rt_spec, GroupSpec):
                 for g in rt_spec.groups:
-                    RenderDocsHelper.render_group_specs(group_spec=g, rst_doc=type_desc_doc, parent='' if rt != 'NWBFile' else '/')
+                    SpecToRST.render_group_spec(group_spec=g,
+                                                depth_char=spec_table_depth_char,
+                                                show_table_titles=spec_show_title_for_tables,
+                                                appreviate_main_object_doc=spec_appreviate_main_object_doc_in_tables,
+                                                show_subgroups_in_seperate_table=spec_show_subgroups_in_seperate_table,
+                                                rst_doc=type_desc_doc,
+                                                parent='' if rt != 'NWBFile' else '/')
 
             ########################################
-            #  Write the type-sepcific files
+            #  Write the type-specific files
             #########################################
             # Add includes for the type-specific inc files if necessary
             if file_per_type:
@@ -1156,16 +399,18 @@ class RenderDocsHelper(object):
                 type_src_filename = os.path.join(file_dir, '%s_source.inc' % rt)
                 type_desc_filename = os.path.join(file_dir, '%s_description.inc' % rt)
                 type_desc_doc.write(type_desc_filename, 'w')
-                PrintHelper.print("    " + rt + '-- WRITE DESCRIPTION DOC OK.', PrintHelper.OKGREEN)
+                if print_status:
+                    PrintHelper.print("    " + rt + '-- WRITE DESCRIPTION DOC OK.', PrintHelper.OKGREEN)
                 type_src_doc.write(type_src_filename, 'w')
-                PrintHelper.print("    " + rt + '-- WRITE SOURCE DOC OK.', PrintHelper.OKGREEN)
+                if print_status:
+                    PrintHelper.print("    " + rt + '-- WRITE SOURCE DOC OK.', PrintHelper.OKGREEN)
                 # Include the files in the main documents
                 desc_doc.add_include(os.path.basename(file_dir) + "/" + os.path.basename(type_desc_filename))
                 src_doc.add_include(os.path.basename(file_dir) + "/" + os.path.basename(type_src_filename))
 
             #####################################
             # Add a clearpage command for latex
-            # ######################################
+            #######################################
             # to avoid possible troubles with figure placement outside of the current section we add a new page in
             # LaTeX after each main section
             if spec_add_latex_clearpage_after_ndt_sections:
@@ -1212,20 +457,22 @@ def main():
                 return
 
     # Load the core namespace
-    core_namespace, spec_catalog = SchemaHelper.load_nwb_namespace(namespace_file=core_namespace_file,
-                                                                   default_namespace=spec_input_default_namespace,
-                                                                   resolve=spec_resolve_type_inc)
-
-    # Generate the hierarchy of types
-    print("BUILDING TYPE HIERARCHY")
-    registered_types = spec_catalog.get_registered_types()
-    type_hierarchy, flat_type_hierarchy = SchemaHelper.compute_data_type_hierarchy(spec_catalog)
-    SchemaHelper.print_type_hierarchy(type_hierarchy, show_ancestry=False)
+    namespace_catalog =  load_namespace(namespace_file=core_namespace_file,
+                                        default_namespace=spec_input_default_namespace,
+                                        resolve=spec_resolve_type_inc,
+                                        default_type_map=spec_default_type_map,
+                                        group_spec_cls=spec_group_spec_cls,
+                                        dataset_spec_cls=spec_dataset_spec_cls,
+                                        spec_namespace_cls=spec_namespace_spec_cls)
+    default_namespace = namespace_catalog.get_namespace(spec_input_default_namespace)
+    spec_catalog = default_namespace.catalog
 
     # Sorting types into sections
-    print("SORTING TYPES INTO SECTIONS")
-    type_sections = SchemaHelper.sort_type_hierarchy_to_sections(type_hierarchy, registered_types)
-    SchemaHelper.print_sections(type_sections)
+    print()
+    PrintHelper.print("SORTING TYPES INTO SECTIONS", PrintHelper.BOLD)
+    PrintHelper.print("---------------------------", PrintHelper.BOLD)
+    type_sections = DataTypeSection.sort_types_to_sections(default_namespace)
+    DataTypeSection.print_sections(type_sections)
 
     # Create the documentation RST file
     desc_doc =  RSTDocument()
@@ -1244,51 +491,53 @@ def main():
     if src_doc is not None:
         masterdoc.add_include(os.path.basename(file_dir) + "/" + os.path.basename(srcdoc_filename))
 
-    # Create type hierarchy document
-    print("RENDERING TYPE HIERARCHY")
-    #desc_doc.add_section("Type Overview")
-    type_hierarchy_doc = RenderDocsHelper.render_type_hierarchy(type_hierarchy=type_hierarchy)
+    # Create and render the type hierarchy
+    PrintHelper.print("RENDERING TYPE HIERARCHY", PrintHelper.BOLD)
+    PrintHelper.print("------------------------", PrintHelper.BOLD)
+    type_hierarchy_doc, type_hierarchy = SpecToRST.render_type_hierarchy(spec_catalog)
     type_hierarchy_doc.write(type_hierarchy_doc_filename, 'w')
-    # desc_doc.add_include(os.path.basename(file_dir) + "/" + os.path.basename(type_hierarchy_doc_filename))
+    PrintHelper.print_type_hierarchy(type_hierarchy)  # Print the hierarchy to the command line for debugging
 
-    print("RENDERING NAMESPACE SPECIFICATION")
+    # Render the namespace specficiation
+    PrintHelper.print("RENDERING NAMESPACE SPECIFICATION", PrintHelper.BOLD)
+    PrintHelper.print("---------------------------------", PrintHelper.BOLD)
     # Create the namespace document
-    RenderDocsHelper.render_namespace(namespace_catalog=core_namespace,
-                     namespace_name=spec_input_default_namespace,
-                     desc_doc=desc_doc,
-                     src_doc=src_doc,
-                     show_yaml_src=spec_show_yaml_src,
-                     file_dir=file_dir,
-                     file_per_type=spec_file_per_type,
-                     type_hierarchy_include=os.path.basename(file_dir) + "/" + os.path.basename(type_hierarchy_doc_filename),
-                     type_hierarchy_include_in_html_only=True)
+    SpecToRST.render_namespace(
+        namespace_catalog=namespace_catalog,
+        namespace_name=spec_input_default_namespace,
+        desc_doc=desc_doc,
+        src_doc=src_doc,
+        show_yaml_src=spec_show_yaml_src,
+        file_dir=file_dir,
+        file_per_type=spec_file_per_type,
+        type_hierarchy_include_html=os.path.basename(file_dir) + "/" + os.path.basename(type_hierarchy_doc_filename),  # TODO: Make this a configurable option
+        type_hierarchy_include_latex=None,  # Don't show type hierarchy in tex to avoid deep nesting. TODO: Make this a configurable option
+        print_status=True
+      )
 
     # Create the section for the format specification
-    print("RENDERING TYPE SPECIFICATIONS")
+    PrintHelper.print("RENDERING TYPE SPECIFICATIONS", PrintHelper.BOLD)
+    PrintHelper.print("------------------------------", PrintHelper.BOLD)
     desc_doc.add_latex_clearpage() # Add a clearpage command for latex to avoid possible troubles with figure placement outside of the current section
     desc_doc.add_label("nwb-type-specifications")
     desc_doc.add_section("Type Specifications")
 
     # Render all the sections with the different types
     sec_index = 0
-    for sec in type_sections:
+    for key, sec in type_sections.items():
+        # Add a latex clearpage for subsequent sections to improve layout of figures and tables
         if sec_index > 0:
             desc_doc.add_latex_clearpage()
-        desc_doc.add_label(sec['title'].replace(' ', '_'))
-        desc_doc.add_subsection(sec['title'])
-        if src_doc is not None:
-            src_doc.add_label(sec['title'].replace(' ', '_') + '_src')
-            src_doc.add_subsection(sec['title'])
-
         # Render all registered documents for the current section
-        RenderDocsHelper.render_specs(data_types=sec['data_types'],  #sorted(registered_types),
-                     spec_catalog=spec_catalog,
-                                      desc_doc=desc_doc,
-                                      src_doc=src_doc,
-                                      file_dir=file_dir,
-                                      show_hierarchy_plots=spec_show_hierarchy_plots,
-                                      show_yaml_src=spec_show_yaml_src,
-                                      file_per_type=spec_file_per_type)
+        RenderDocsHelper.render_data_type_section(section=sec,
+                                                  spec_catalog=spec_catalog,
+                                                  desc_doc=desc_doc,
+                                                  src_doc=src_doc,
+                                                  file_dir=file_dir,
+                                                  show_hierarchy_plots=spec_show_hierarchy_plots,
+                                                  show_yaml_src=spec_show_yaml_src,
+                                                  file_per_type=spec_file_per_type,
+                                                  print_status=True)
         sec_index += 1
 
     #######################################
