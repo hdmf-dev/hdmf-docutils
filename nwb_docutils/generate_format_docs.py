@@ -14,8 +14,9 @@ from hdmf.spec.namespace import SpecNamespace
 import warnings
 import os
 
-from .doctools.rstdoc import RSTSectionLabelHelper as LabelHelper
-from .doctools.rstdoc import RSTDocument, SpecToRST, DataTypeSection
+from .doctools.rst import RSTSectionLabelHelper as LabelHelper
+from .doctools.rst import RSTDocument
+from .doctools.renderrst import SpecToRST, DataTypeSection
 from .doctools.output import PrintHelper, GitHashHelper
 
 ############################################################################
