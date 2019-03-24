@@ -466,7 +466,7 @@ class SpecToRST(object):
         def add_sub_hierarchy(outdoc, type_hierarchy, depth=0, indent_step='   '):
             """
             Helper function used to print a hierarchy of data_types
-            :param type_hierarchy: Hierarichal OrderedDict containing for each type a an OrderedDict with its substypes
+            :param type_hierarchy: Hierarchical OrderedDict containing for each type a an OrderedDict with its substypes
             :param depth: Recursion depth of the print used to indent the hierarchy
             """
             for k, v in type_hierarchy.items():
