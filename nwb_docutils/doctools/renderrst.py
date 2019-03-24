@@ -51,8 +51,8 @@ class DataTypeSection(dict):
 
         The strategy for sorting types to sections is based on source files, i.e., the function
         creates one section per source file. The title and intro for the section are as given
-        in the namespace. The title is set to the name of the source file if not dedicated title
-        is specfified in the namespace. The data types are then placed in the sections based on in
+        in the namespace. The title is set to the name of the source file if no dedicated title
+        is specified in the namespace. The data types are then placed in the sections based on in
         which source file they are defined in.
 
         :param namespace: The namespace with all the types to be rendered
@@ -71,7 +71,7 @@ class DataTypeSection(dict):
                                                       intro=intro,
                                                       data_types=[])
 
-        # Add the indivitual data types to the corresponding sections
+        # Add the individual data types to the corresponding sections
         spec_catalog = namespace.catalog
         for nt in spec_catalog.get_registered_types():
             spec_filename = spec_catalog.get_spec_source_file(nt)
