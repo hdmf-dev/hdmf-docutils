@@ -4,7 +4,7 @@ import versioneer
 
 from setuptools import setup, find_packages
 
-with open('README.doctools', 'r') as fp:
+with open('README.rst', 'r') as fp:
     readme = fp.read()
 
 
