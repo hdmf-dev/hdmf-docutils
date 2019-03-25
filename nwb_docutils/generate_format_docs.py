@@ -202,7 +202,7 @@ def render_data_type_section(section,
         # Add the document string for the data_type to the document
         rt_clean_doc = SpecToRST.clean_schema_doc_string(rt_spec['doc'],
                                                          add_prefix=type_desc_doc.newline+type_desc_doc.newline,
-                                                         add_postifix=type_desc_doc.newline,
+                                                         add_postfix=type_desc_doc.newline,
                                                          rst_format='**')
         type_desc_doc.add_text(rt_clean_doc)
         type_desc_doc.add_text(type_desc_doc.newline + type_desc_doc.newline)
