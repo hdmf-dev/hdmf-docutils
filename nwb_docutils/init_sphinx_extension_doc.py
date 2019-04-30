@@ -786,12 +786,12 @@ def write_custom_conf(output, **kwargs):
     # Write the custom settings files
     custom_sphinx_settings, custom_doc_autogen_settings = get_custom_settings(output, **kwargs)
     outfilename = os.path.join(output, 'source/conf.py')
-    outfile = open(outfilename, 'a')
+    outfile = open(outfilename, 'a', encoding='utf-8')
     outfile.write(custom_sphinx_settings)
     outfile.close()
     # Write the custom doc autogen settings
     outfilename = os.path.join(output, 'source/conf_doc_autogen.py')
-    outfile = open(outfilename, 'a')
+    outfile = open(outfilename, 'a', encoding='utf-8')
     outfile.write(custom_doc_autogen_settings)
     outfile.close()
 
@@ -803,7 +803,7 @@ def write_theme_overwrites(output):
     if not os.path.exists(static_path):
         os.mkdir(static_path)
     outfilename = os.path.join(static_path, 'theme_overrides.css')
-    outfile = open(outfilename, 'w')
+    outfile = open(outfilename, 'w', encoding='utf-8')
     outfile.write(get_theme_overwrites())
     outfile.close()
 
@@ -812,7 +812,7 @@ def write_theme_overwrites(output):
 #######################################
 def write_makefile(output):
     outfilename = os.path.join(output, 'Makefile')
-    outfile = open(outfilename, 'w')
+    outfile = open(outfilename, 'w', encoding='utf-8')
     outfile.write(get_makefile())
     outfile.close()
 
@@ -821,7 +821,7 @@ def write_makefile(output):
 #######################################
 def write_format_rst(output, format_master, project, spec_output_dir, output_master, custom_description=None, custom_release_notes=None):
     outfilename = os.path.join(output, 'source/%s' % format_master)
-    outfile = open(outfilename, 'w')
+    outfile = open(outfilename, 'w', encoding='utf-8')
     outfile.write(get_format_rst(spec_output_dir=spec_output_dir,
                                  output_master=output_master,
                                  project=project,
@@ -854,7 +854,7 @@ Overview
     Add the description of your format/extension here
 """
     if custom_description_text is not None:
-        outfile = open(outfilename, 'w')
+        outfile = open(outfilename, 'w', encoding='utf-8')
         outfile.write(custom_description_text)
         outfile.close()
         return os.path.basename(outfilename)
@@ -882,7 +882,7 @@ Release Notes
     Add the release notes of your format/extension here
 """
     if custom_release_notes_text is not None:
-        outfile = open(outfilename, 'w')
+        outfile = open(outfilename, 'w', encoding='utf-8')
         outfile.write(custom_release_notes_text)
         outfile.close()
         return os.path.basename(outfilename)
@@ -895,7 +895,7 @@ Release Notes
 def write_index_rst(output, format_master, master, sphinx_master):
     os.remove(os.path.join(output, 'source/%s.rst' % sphinx_master))
     outfilename = os.path.join(output, 'source/%s' % master)
-    outfile = open(outfilename, 'w')
+    outfile = open(outfilename, 'w', encoding='utf-8')
     outfile.write(get_index_rst(format_master=format_master))
     outfile.close()
 
@@ -904,7 +904,7 @@ def write_index_rst(output, format_master, master, sphinx_master):
 #######################################
 def write_readme(output, custom_description, custom_release_notes):
     outfilename = os.path.join(output, 'Readme.md')
-    outfile = open(outfilename, 'w')
+    outfile = open(outfilename, 'w', encoding='utf-8')
     outfile.write(get_readme(custom_description=custom_description,
                              custom_release_notes=custom_release_notes))
     outfile.close()
