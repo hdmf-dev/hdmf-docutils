@@ -372,13 +372,11 @@ class SpecToRST(object):
                 desc_list.append('**Schema:**')
                 schema_list = []
                 for s in curr_namespace['schema']:
-                    curr_str = ""
                     if isinstance(s, dict):
                         for k, v in s.items():
-                            curr_str += '**%s:** %s ' % (str(k), str(v))
+                            schema_list.append('**%s:** %s ' % (str(k), str(v)))
                     else:
-                        curr_str = str(s)
-                    schema_list.append(curr_str)
+                        schema_list.append(s)
                 desc_list.append(schema_list)
             # Render the list with the descripiton of the namespace
             if len(desc_list) > 0:
