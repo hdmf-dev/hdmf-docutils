@@ -216,7 +216,8 @@ class SpecToRST(object):
         re += ", ".join([RSTDocument.get_reference(RSTSectionLabelHelper.get_section_label(ct), ct)
                            for ct in ancestry[start_index:]])
         return re
-
+    
+    @staticmethod
     def render_subtypes(spec_catalog, data_type, prefix=None):
         """
         Render an RST string with a list of all the subtypes of the given data_type with links to
