@@ -75,7 +75,8 @@ class DataTypeSection(dict):
         spec_catalog = namespace.catalog
         for nt in spec_catalog.get_registered_types():
             spec_filename = spec_catalog.get_spec_source_file(nt)
-            sections[spec_filename]['data_types'].append(nt)
+            if spec_filename in namespace.get_source_files():
+                sections[spec_filename]['data_types'].append(nt)
 
         # Return the sections
         return sections
