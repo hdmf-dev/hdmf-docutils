@@ -213,10 +213,9 @@ def render_data_type_section(section,
                 if not spec_resolve_type_inc \
                 else ". The following is a description of the complete structure of" + \
                      "``%s`` including all inherited components." % rt
-            type_desc_doc.add_text("``%s`` extends ``%s`` (see %s) and includes all elements of %s%s" %
+            type_desc_doc.add_text("``%s`` extends ``%s`` and includes all elements of %s%s" %
                                    (rt,
                                     extend_type,
-                                    type_desc_doc.get_numbered_reference(LabelHelper.get_section_label(extend_type)),
                                     type_desc_doc.get_reference(LabelHelper.get_section_label(extend_type),
                                                                 extend_type),
                                     sentence_end))
