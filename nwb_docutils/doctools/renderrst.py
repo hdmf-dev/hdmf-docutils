@@ -151,7 +151,7 @@ class SpecToRST(object):
             return qdict[quantity]
 
     @staticmethod
-    def clean_schema_doc_string(doc_str, add_prefix=None, add_postifix=None, rst_format='**', remove_html_tags=True):
+    def clean_schema_doc_string(doc_str, add_prefix=None, add_postfix=None, rst_format='**', remove_html_tags=True):
         """
         Given a doc string from a schema do basic cleaning operations to improve discplay in RST documents.
         Some of the operations performed are:
@@ -164,6 +164,8 @@ class SpecToRST(object):
         :param add_prefix: Prefix string to be added before Comment, Note, etc. substrings.
                            Useful, e.g., to add newlines before the different sections of the doc string.
         :type add_prefix: str or None
+        :param add_postfix: Postfix string to be added after Comment, Note, etc. substrings.
+        :type add_postfix: str or None
         :param rst_format: RST formatting to be used for Comment, Note et.c headings. Default='**' for bold text.
         :type rst_format: str
         :param remove_html_tags: Boolean indicating whether the function should try to replace html tags with rst
@@ -189,8 +191,8 @@ class SpecToRST(object):
                                               (prefix, rst_format, rst_format))
         clean_doc_str = clean_doc_str.replace('NOTE:', '%s %sAdditional Information:%s ' %
                                               (prefix, rst_format, rst_format))
-        if add_postifix is not None:
-            clean_doc_str += add_postifix
+        if add_postfix is not None:
+            clean_doc_str += add_postfix
         return clean_doc_str
 
     @staticmethod
