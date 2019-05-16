@@ -1,19 +1,64 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
-- master
+  branches:
+    include:
+    - master
 
-pool:
-  vmImage: 'ubuntu-latest'
+jobs:
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- job: 'Test'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+  strategy:
+    matrix:
+      Linux-py3.7:
+        imageName: 'ubuntu-16.04'
+        pythonVersion: '3.7'
+      Linux-py3.6:
+        imageName: 'ubuntu-16.04'
+        pythonVersion: '3.6'
+      Linux-py3.5:
+        imageName: 'ubuntu-16.04'
+        pythonVersion: '3.5'
+
+      macOS-py3.7:
+        imageName: 'macos-10.13'
+        pythonVersion: '3.7'
+      macOS-py3.6:
+        imageName: 'macos-10.13'
+        pythonVersion: '3.6'
+      macOS-py3.5:
+        imageName: 'macos-10.13'
+        pythonVersion: '3.5'
+
+      Windows-py3.7:
+        imageName: 'vs2017-win2016'
+        pythonVersion: '3.7'
+      Windows-py3.6:
+        imageName: 'vs2017-win2016'
+        pythonVersion: '3.6'
+      Windows-py3.5:
+        imageName: 'vs2017-win2016'
+        pythonVersion: '3.5'
+
+  pool:
+    vmImage: $(imageName)
+
+  steps:
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(pythonVersion)'
+      architecture: 'x64'
+
+  - script: |
+      python -m pip install --upgrade pip
+      python -m pip install -r requirements-dev.txt
+    displayName: 'Install build dependencies'
+
+  - script: |
+      python -m pip install -e .
+    displayName: 'Install nwb-docutils'
+
+  - script: |
+      pytest
+    displayName: 'Run tests'
+
