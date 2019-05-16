@@ -45,6 +45,9 @@ def check_tgt_dir(tgt_dir, clobber=False):
 
 def build(src_file, tgt_dir=TGT_DIR_DEFAULT, open_html=OPEN_DEFAULT, conda_env=None, clobber=False):
 
+    if _platform == 'win32':
+        raise RuntimeError('Windows is not supported')
+
     # Get temporary build dir, and make html using template:
     temp_dir = tempfile.mkdtemp()
     template_loc = 'https://github.com/nicain/sg-template.git'
@@ -57,12 +60,13 @@ def build(src_file, tgt_dir=TGT_DIR_DEFAULT, open_html=OPEN_DEFAULT, conda_env=N
         os.remove(os.path.join(temp_dir, 'docs', 'gallery', 'helloworld.py'))
         shutil.copy(src_file, os.path.join(temp_dir, 'docs', 'gallery', os.path.basename(src_file)))
 
-    print(os.path.join(temp_dir, 'docs'))
+    docs_dir = os.path.join(temp_dir, 'docs')
+    print(docs_dir)
     if conda_env is None:
-        err_code = subprocess.call('cd %s && make html' % os.path.join(temp_dir, 'docs'), shell=True)
+        err_code = subprocess.call('make html', shell=True, cwd=docs_dir)
     else:
         err_code = subprocess.call('source activate %s && \
-                                    cd %s && make html' % (conda_env, os.path.join(temp_dir, 'docs')), shell=True)
+                                    make html' % (conda_env, docs_dir), shell=True, cwd=docs_dir)
     assert err_code == 0
 
     # Move built html to tgt_dir:
