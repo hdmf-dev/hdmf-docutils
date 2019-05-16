@@ -1,0 +1,64 @@
+trigger:
+  branches:
+    include:
+    - master
+
+jobs:
+
+- job: 'Test'
+
+  strategy:
+    matrix:
+      Linux-py3.7:
+        imageName: 'ubuntu-16.04'
+        pythonVersion: '3.7'
+      Linux-py3.6:
+        imageName: 'ubuntu-16.04'
+        pythonVersion: '3.6'
+      Linux-py3.5:
+        imageName: 'ubuntu-16.04'
+        pythonVersion: '3.5'
+
+      macOS-py3.7:
+        imageName: 'macos-10.13'
+        pythonVersion: '3.7'
+      macOS-py3.6:
+        imageName: 'macos-10.13'
+        pythonVersion: '3.6'
+      macOS-py3.5:
+        imageName: 'macos-10.13'
+        pythonVersion: '3.5'
+
+      Windows-py3.7:
+        imageName: 'vs2017-win2016'
+        pythonVersion: '3.7'
+      Windows-py3.6:
+        imageName: 'vs2017-win2016'
+        pythonVersion: '3.6'
+      Windows-py3.5:
+        imageName: 'vs2017-win2016'
+        pythonVersion: '3.5'
+
+  pool:
+    vmImage: $(imageName)
+
+  steps:
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(pythonVersion)'
+      architecture: 'x64'
+
+  - script: |
+      python -m pip install --upgrade pip
+      python -m pip install -r requirements-dev.txt
+    displayName: 'Install build dependencies'
+
+  - script: |
+      python -m pip install -e .
+    displayName: 'Install nwb-docutils'
+
+  - script: |
+      pytest
+    displayName: 'Run tests'
+
