@@ -4,6 +4,10 @@ NWB Documentation Utilities
 
 *This project is under active development. Its content, API and behavior may change at any time. We mean it.*
 
+.. image:: https://dev.azure.com/NeurodataWithoutBorders/nwb-docutils/_apis/build/status/NeurodataWithoutBorders.nwb-docutils?branchName=master
+    :target: https://dev.azure.com/NeurodataWithoutBorders/nwb-docutils/_build/latest?definitionId=1&branchName=master
+    :alt:    Build Status
+
 Overview
 --------
 
