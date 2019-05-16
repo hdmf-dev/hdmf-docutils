@@ -30,7 +30,7 @@ def assert_firefox():
     try:
         subprocess.check_output(['firefox', '--version'])
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 
