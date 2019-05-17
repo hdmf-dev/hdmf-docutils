@@ -8,6 +8,10 @@ NWB Documentation Utilities
     :target: https://dev.azure.com/NeurodataWithoutBorders/nwb-docutils/_build/latest?definitionId=1&branchName=master
     :alt:    Build Status
 
+.. image:: https://img.shields.io/pypi/v/nwb-docutils.svg
+    :target: https://pypi.org/project/nwb-docutils/
+    :alt:    PyPI
+
 Overview
 --------
 
