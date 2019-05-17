@@ -58,3 +58,80 @@ nwb-utils was initially a sub-directory of the nwb-schema project. Corresponding
 the `4th NWB Hackathon <https://neurodatawithoutborders.github.io/nwb_hackathons/HCK04_2018_Seattle/>`_ into a
 dedicated *pip-installable* project to facilitate its use by both core NWB documentation projects and various
 NWB extensions.
+
+
+maintainers: how to make a release ?
+------------------------------------
+
+1. Configure ``~/.pypirc`` as described `here <https://packaging.python.org/distributing/#uploading-your-project-to-pypi>`_.
+
+
+2. Make sure the cli and module work as expected.
+
+
+3. List all tags sorted by version
+
+   ::
+
+       $ git fetch --tags && \
+         git tag -l | sort -V
+
+
+4. Choose the next release version number::
+
+    release="X.Y.Z"
+
+
+5. Tag the release. Requires a GPG key with signatures
+
+   ::
+
+       git tag -s -m "nwb-docutils ${release}" ${release} origin/master
+
+   And push
+
+   ::
+
+       git push origin ${release}
+
+
+6. Create the source tarball and binary wheels
+
+   ::
+
+       rm -rf dist/
+       python setup.py sdist bdist_wheel
+
+
+7. Upload the packages to the testing PyPI instance
+
+   ::
+
+       twine upload --sign -r pypitest dist/*
+
+
+8. Check the `PyPI testing package page <https://test.pypi.org/project/nwb-docutils/>`_.
+
+
+9. Upload the packages to the PyPI instance::
+
+    twine upload --sign dist/*
+
+
+10. Check the `PyPI package page <https://pypi.org/project/nwb-docutils/>`_.
+
+
+11. Create a virtual env, and make sure the package can be installed
+
+    ::
+
+        mkvirtualenv test-nwb-docutils-install
+        pip install nwb-docutils
+
+
+12. Cleanup
+
+    ::
+
+        deactivate
+        rmvirtualenv test-nwb-docutils-install
