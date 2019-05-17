@@ -227,7 +227,7 @@ License
 #######################################
 #  Create text for the format.rst file
 #######################################
-def get_format_rst(spec_output_dir, output_master, project, custom_description=None, custom_release_notes=None):
+def get_format_rst(spec_output_dir, output_master, project):
     heading = ""
     for i in range(len(project)):
         heading += '*'
@@ -244,20 +244,11 @@ Version |release| |today|
 
 .. .. contents::
 """ % (project.replace(' ', '_'),  heading, project, heading)
-    if custom_description is not None:
-        format_rst_text += \
-"""
-.. include:: %s
-""" % custom_description
+
     format_rst_text += \
 """
 .. include:: %s/%s
 """ % (spec_output_dir.rstrip('/'), output_master)
-    if custom_release_notes is not None:
-        format_rst_text += \
-"""
-.. include:: %s
-""" % custom_release_notes
 
     return format_rst_text
 
@@ -265,27 +256,53 @@ Version |release| |today|
 #######################################
 #  Create text for the index.rst file
 #######################################
-def get_index_rst(project, format_master):
+def get_index_rst(project, format_master, custom_description=None, custom_release_notes=None):
     index_rst = \
 """Specification for the %s extension
 ==================================
 
+""" % project
 
+    if custom_description is not None:
+        index_rst += \
+"""
 .. toctree::
     :numbered:
     :maxdepth: 8
     :caption: Table of Contents
 
+    %s
+""" % custom_description.split(".")[0]  # strip .rst extension
+
+    index_rst += \
+"""
+.. toctree::
+    :numbered:
+    :maxdepth: 3
+    :caption: Extension Specification
 
     %s
+""" % format_master
 
+    index_rst += \
+"""
+.. toctree::
+    :maxdepth: 2
+    :caption: History & Legal
+
+    %s
+    credits
+""" % (custom_release_notes.split(".")[0] if custom_release_notes is not None else "")  # strip .rst extension
+
+    index_rst += \
+"""
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-""" % (project, format_master)
+"""
 
     return index_rst
 
@@ -956,14 +973,12 @@ def write_credits_rst(output, credits_master):
 #######################################
 #  Write format rst
 #######################################
-def write_format_rst(output, format_master, project, spec_output_dir, output_master, custom_description=None, custom_release_notes=None):
+def write_format_rst(output, format_master, project, spec_output_dir, output_master):
     outfilename = os.path.join(output, 'source/%s' % format_master)
     outfile = open(outfilename, 'w', encoding='utf-8')
     outfile.write(get_format_rst(spec_output_dir=spec_output_dir,
                                  output_master=output_master,
-                                 project=project,
-                                 custom_description=custom_description,
-                                 custom_release_notes=custom_release_notes))
+                                 project=project))
     outfile.close()
 
 ######################################
@@ -1023,11 +1038,14 @@ def write_custom_release_notes(output, custom_release_notes, external_release_no
 #########################################################################
 #  Write custom index rst and delete the default one created by sphinx
 ########################################################################
-def write_index_rst(output, format_master, project, master, sphinx_master):
+def write_index_rst(output, format_master, project, master, sphinx_master, custom_description=None, custom_release_notes=None):
     os.remove(os.path.join(output, 'source/%s.rst' % sphinx_master))
     outfilename = os.path.join(output, 'source/%s' % master)
     outfile = open(outfilename, 'w', encoding='utf-8')
-    outfile.write(get_index_rst(project=project, format_master=format_master))
+    outfile.write(get_index_rst(
+        project=project, format_master=format_master,
+        custom_description=custom_description,
+        custom_release_notes = custom_release_notes))
     outfile.close()
 
 #######################################
@@ -1073,14 +1091,14 @@ def main():
                      format_master=clargs['format_master'],
                      project=clargs['project'],
                      spec_output_dir=clargs['spec_output_dir'],
-                     output_master=clargs['output_master'],
-                     custom_description=custom_description_file,
-                     custom_release_notes=custom_release_notes_file)
+                     output_master=clargs['output_master'])
     write_index_rst(output=clargs['output'],
                     format_master=clargs['format_master'].split('.')[0],  # strip '.rst' extension
                     project=clargs['project'],
                     master=clargs['master'],
-                    sphinx_master=sphinx_master)
+                    sphinx_master=sphinx_master,
+                     custom_description=custom_description_file,
+                     custom_release_notes=custom_release_notes_file)
 
     write_readme(output=clargs['output'],
                  custom_description=custom_description_file,
