@@ -4,6 +4,14 @@ NWB Documentation Utilities
 
 *This project is under active development. Its content, API and behavior may change at any time. We mean it.*
 
+.. image:: https://img.shields.io/pypi/l/nwb-docutils.svg
+    :target: https://github.com/NeurodataWithoutBorders/nwb-docutils/blob/master/license.txt
+    :alt:    PyPI - License
+
+.. image:: https://img.shields.io/pypi/v/nwb-docutils.svg
+    :target: https://pypi.org/project/nwb-docutils/
+    :alt:    PyPI
+
 .. image:: https://dev.azure.com/NeurodataWithoutBorders/nwb-docutils/_apis/build/status/NeurodataWithoutBorders.nwb-docutils?branchName=master
     :target: https://dev.azure.com/NeurodataWithoutBorders/nwb-docutils/_build/latest?definitionId=1&branchName=master
     :alt:    Build Status
