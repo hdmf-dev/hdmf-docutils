@@ -146,13 +146,13 @@ In addition to standard Sphinx options, there are a number of additional options
 
 * `spec_show_yaml_src` - Boolean indicating whether the YAML sources should be included for the different Neurodata types
 * `spec_generate_src_file` - Boolean indicating whether the YAML sources of the neurodata_types should be rendered in a separate section (True) or in the same location as the main documentation
-* `spec_show_hierarchy_plots` - Boolean indicating whether we should generate and show figures of the hierachy defined by the specifications as part of the documentation
+* `spec_show_hierarchy_plots` - Boolean indicating whether we should generate and show figures of the hierarchy defined by the specifications as part of the documentation
 * `spec_file_per_type` - Boolean indicating whether we should generate separate .inc reStructuredText for each neurodata_type (True)
 or should all text be added to the main file (False)
 * `spec_show_subgroups_in_tables` - Should subgroups of the main groups be rendered in the table as well. Usually this is disabled since groups are rendered as separate sections in the text
 * `spec_appreviate_main_object_doc_in_tables` - Abbreviate the documentation of the main object for which a table is rendered in the table. This is commonly set to True as doc of the main object is already rendered as the main intro for the section describing the object
 * `spec_show_title_for_tables` - Add a title for the table showing the specifications.
-* `spec_show_subgroups_in_seperate_table` - Should top-level subgroups be listed in a seperate table or as part of the main dataset and attributes table
+* `spec_show_subgroups_in_seperate_table` - Should top-level subgroups be listed in a separate table or as part of the main dataset and attributes table
 * `spec_table_depth_char` - Char to be used as prefix to indicate the depth of an object in the specification hierarchy. NOTE: The char used should be supported by LaTeX.
 * `spec_add_latex_clearpage_after_ndt_sections` - Add a LaTeX clearpage after each main section describing a neurodata_type. This helps in LaTeX to keep the ordering of figures, tables, and code blocks consistent in particular when the hierarchy_plots are included.
 * `spec_resolve_type_inc` - Resolve includes to always show the full list of objects that are part of a type (True) or to show only the parts that are actually new to a current type while only linking to base types (False)
@@ -487,7 +487,7 @@ spec_generate_src_file = %s
 # or should all text be added to the main file
 spec_file_per_type = %s
 
-# Should top-level subgroups be listed in a seperate table or as part of the main dataset and attributes table
+# Should top-level subgroups be listed in a separate table or as part of the main dataset and attributes table
 spec_show_subgroups_in_seperate_table = %s
 
 # Abbreviate the documentation of the main object for which a table is rendered in the table.
@@ -573,7 +573,7 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 help:
 	@echo "To update documentation sources from the format specification please use \`make apidoc'"
 	@echo ""
-	@echo "To build the documenation please use \`make <target>' where <target> is one of"
+	@echo "To build the documentation please use \`make <target>' where <target> is one of"
 	@echo "  fulldoc    to rebuild the apidoc, html, and latexpdf all at once"
 	@echo "  html       to make standalone HTML files"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
@@ -743,7 +743,7 @@ def define_cl_args():
     :return: argparse.ArgumentParser
     """
 
-    parser = argparse.ArgumentParser(description='Create format specification SPHINX documenation for an NWB extension.',
+    parser = argparse.ArgumentParser(description='Create format specification SPHINX documentation for an NWB extension.',
                                      add_help=True,
                                      epilog="\n Copyright: Lawrence Berkeley National Laboratory: 2017",
                                      formatter_class=RawDescriptionDefaultHelpArgParseFormatter)
@@ -790,15 +790,15 @@ def define_cl_args():
     parser.add_argument('--latex_clearpage_after_type', dest='latex_clearpage_after_type', action='store', type=bool_type, required=False, default=True,
                         help="Add clearpage command in latex after each neurodata_type to esnure figures always appear in the right section at the cost of adding empty space between sections.")
     parser.add_argument('--table_depth_char', dest='table_depth_char', action='store', type=str, required=False, default='.',
-                        help="Char to be used to indent entries in desciption tables to indicate the depth of the object.")
+                        help="Char to be used to indent entries in description tables to indicate the depth of the object.")
     parser.add_argument('--abbrv_main_obj_in_table', dest='abbrv_main_obj_in_table', action='store', type=bool_type, required=False, default=True,
                         help="Appreviate the description of the main object in the description tables?")
     parser.add_argument('--subgroups_in_seperate_table', dest='subgroups_in_seperate_table', action='store', type=bool_type, required=False, default=True,
-                        help="Render the description of top level subgroups in seperate tables rather than as part of the attributes/dataset table?.")
+                        help="Render the description of top level subgroups in separate tables rather than as part of the attributes/dataset table?.")
     parser.add_argument('--generate_file_per_type', dest='generate_file_per_type', action='store', type=bool_type, required=False, default=True,
                         help="Generate separate reStructuredText files with .inc ending for each type/neurodata_type rather than rendering all description in a single file?")
     parser.add_argument('--generate_src_file', dest='generate_src_file', action='store', type=bool_type, required=False, default=True,
-                        help="Generate seperate reStructuredText files for the YAML sources rather than including them in the desription files?")
+                        help="Generate separate reStructuredText files for the YAML sources rather than including them in the description files?")
     parser.add_argument('--show_hierarchy_plots', dest='show_hierarchy_plots', action='store', type=bool_type, required=False, default=True,
                         help="Generate and show plots of the hierarchy for each tyep/neurodata_type?")
     parser.add_argument('--show_yaml_src', dest='show_yaml_src', action='store', type=bool_type, required=False, default=True,

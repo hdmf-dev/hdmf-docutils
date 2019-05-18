@@ -106,7 +106,7 @@ def load_namespace(namespace_file,
     :param default_namespace: String with the name of the default namespace
     :param resolve: Bool indicating whether the type inclusions should be resolved in the namespace
     :param default_type_map: The default TypeMap to be used for loading namespaces. This is useful, e.g., when we have
-                             an API (e.g., PyNWB) where we have type mape that we want to extend/reuse.
+                             an API (e.g., PyNWB) where we have type map that we want to extend/reuse.
 
     :return: NamespaceCatalog
     """
@@ -151,7 +151,7 @@ def render_data_type_section(section,
     :param file_dir: Directory where figures and outpy RST docs should be stored
     :param show_hierarchy_plots: Create figures showing the hierarchy defined by the spec
     :param show_yaml_src: Boolean indicating that we should render the YAML source in the src_doc
-    :param file_per_type: Generate a seperate rst files for each data_type and include them
+    :param file_per_type: Generate a separate rst files for each data_type and include them
                           in the src_doc and desc_doc (True). If set to False then write the
                           contents to src_doc and desc_doc directly.
     :param print_status: Bool indicating whether to print progress and debugging messages to standard out
@@ -309,7 +309,7 @@ def render_data_type_section(section,
         ####################################################################
         #  Add the YAML sources to the document if requested
         ####################################################################
-        # If the YAML are shown in a seperate chapter than add section headings
+        # If the YAML are shown in a separate chapter than add section headings
         if seperate_src_file:
             # Add a section to the file for the sources
             src_sec_lable = LabelHelper.get_src_section_label(rt, spec_generate_src_file, spec_show_yaml_src)
@@ -547,7 +547,7 @@ def main():
         if document is not None and filename is not None:
             document.write(filename=filename, mode=mode)
             PrintHelper.print("Write %s" % filename, PrintHelper.OKGREEN)
-    write_rst_doc(desc_doc, doc_filename)      # Write the descritpion RST document
+    write_rst_doc(desc_doc, doc_filename)      # Write the description RST document
     write_rst_doc(src_doc, srcdoc_filename)    # Write the source RST document
     write_rst_doc(masterdoc, master_filename)  # Write the master RST document
 
