@@ -1074,9 +1074,9 @@ def write_readme(output, custom_description, custom_release_notes):
 #######################################
 #  MAIN
 #######################################
-def main():
+def main(args=None):
     parser = define_cl_args()
-    clargs = vars(parser.parse_args())
+    clargs = vars(parser.parse_args(args))
     clargs['output'] = os.path.abspath(clargs['output'])
     sphinx_master = 'index'  # This is just a temporary master file that sphinx-quickstart will generate. We'll delete that file and write our own custom index file later
     init_sphinx(project=clargs['project'],
