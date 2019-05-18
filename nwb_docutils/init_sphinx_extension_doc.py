@@ -265,7 +265,6 @@ def get_index_rst(project, format_master, custom_description=None, custom_releas
     index_rst = \
 """Specification for the %s extension
 ==================================
-
 """ % project
 
     if custom_description is not None:
@@ -823,7 +822,7 @@ def _read_lines(filepath):
 
 
 def _write_lines(filepath, lines):
-    with open(filepath, 'w') as fp:
+    with open(filepath, 'w', encoding='utf-8') as fp:
         fp.writelines(lines)
 
 
@@ -873,6 +872,16 @@ def _remove_lines_after(filepath, regex, number_of_line=1):
 
     _write_lines(filepath, updated_lines)
     return removed
+
+
+def _append_to_file(filepath, content):
+    with open(filepath, "a", encoding="utf-8") as outfile:
+        outfile.write(content)
+
+
+def _write_file(filepath, content):
+    with open(filepath, "w", encoding="utf-8") as outfile:
+        outfile.write(content)
 
 
 #######################################
@@ -938,14 +947,11 @@ def write_custom_conf(output, **kwargs):
     # Write the custom settings files
     custom_sphinx_settings, custom_doc_autogen_settings = get_custom_settings(output, **kwargs)
     outfilename = os.path.join(output, 'source/conf.py')
-    outfile = open(outfilename, 'a', encoding='utf-8')
-    outfile.write(custom_sphinx_settings)
-    outfile.close()
+    _append_to_file(outfilename, custom_sphinx_settings)
+
     # Write the custom doc autogen settings
     outfilename = os.path.join(output, 'source/conf_doc_autogen.py')
-    outfile = open(outfilename, 'a', encoding='utf-8')
-    outfile.write(custom_doc_autogen_settings)
-    outfile.close()
+    _append_to_file(outfilename, custom_doc_autogen_settings)
 
 
 #######################################
@@ -956,9 +962,7 @@ def write_theme_overwrites(output):
     if not os.path.exists(static_path):
         os.mkdir(static_path)
     outfilename = os.path.join(static_path, 'theme_overrides.css')
-    outfile = open(outfilename, 'w', encoding='utf-8')
-    outfile.write(get_theme_overwrites())
-    outfile.close()
+    _write_file(outfilename, get_theme_overwrites())
 
 
 #######################################
@@ -966,9 +970,7 @@ def write_theme_overwrites(output):
 #######################################
 def write_makefile(output):
     outfilename = os.path.join(output, 'Makefile')
-    outfile = open(outfilename, 'w', encoding='utf-8')
-    outfile.write(get_makefile())
-    outfile.close()
+    _write_file(outfilename, get_makefile())
 
 
 #######################################
@@ -976,8 +978,7 @@ def write_makefile(output):
 #######################################
 def write_credits_rst(output, credits_master):
     outfilename = os.path.join(output, 'source/%s' % credits_master)
-    with open(outfilename, 'w', encoding='utf-8') as outfile:
-        outfile.write(get_credits_rst())
+    _write_file(outfilename, get_credits_rst())
 
 
 #######################################
@@ -985,11 +986,11 @@ def write_credits_rst(output, credits_master):
 #######################################
 def write_format_rst(output, format_master, project, spec_output_dir, output_master):
     outfilename = os.path.join(output, 'source/%s' % format_master)
-    outfile = open(outfilename, 'w', encoding='utf-8')
-    outfile.write(get_format_rst(spec_output_dir=spec_output_dir,
-                                 output_master=output_master,
-                                 project=project))
-    outfile.close()
+    _write_file(outfilename, get_format_rst(
+        spec_output_dir=spec_output_dir,
+        output_master=output_master,
+        project=project
+    ))
 
 
 ######################################
@@ -1012,9 +1013,7 @@ def write_custom_description(output, custom_description, external_description):
     Add the description of your extension here
 """
     if custom_description_text is not None:
-        outfile = open(outfilename, 'w', encoding='utf-8')
-        outfile.write(custom_description_text)
-        outfile.close()
+        _write_file(outfilename, custom_description_text)
         return os.path.basename(outfilename)
     else:
         return None
@@ -1040,9 +1039,7 @@ def write_custom_release_notes(output, custom_release_notes, external_release_no
     Add the release notes of your extension here
 """
     if custom_release_notes_text is not None:
-        outfile = open(outfilename, 'w', encoding='utf-8')
-        outfile.write(custom_release_notes_text)
-        outfile.close()
+        _write_file(outfilename, custom_release_notes_text)
         return os.path.basename(outfilename)
     else:
         return None
@@ -1054,12 +1051,11 @@ def write_custom_release_notes(output, custom_release_notes, external_release_no
 def write_index_rst(output, format_master, project, master, sphinx_master, custom_description=None, custom_release_notes=None):
     os.remove(os.path.join(output, 'source/%s.rst' % sphinx_master))
     outfilename = os.path.join(output, 'source/%s' % master)
-    outfile = open(outfilename, 'w', encoding='utf-8')
-    outfile.write(get_index_rst(
+    _write_file(outfilename, get_index_rst(
         project=project, format_master=format_master,
         custom_description=custom_description,
-        custom_release_notes=custom_release_notes))
-    outfile.close()
+        custom_release_notes=custom_release_notes
+    ))
 
 
 #######################################
@@ -1067,10 +1063,10 @@ def write_index_rst(output, format_master, project, master, sphinx_master, custo
 #######################################
 def write_readme(output, custom_description, custom_release_notes):
     outfilename = os.path.join(output, 'README.md')
-    outfile = open(outfilename, 'w', encoding='utf-8')
-    outfile.write(get_readme(custom_description=custom_description,
-                             custom_release_notes=custom_release_notes))
-    outfile.close()
+    _write_file(outfilename, get_readme(
+        custom_description=custom_description,
+        custom_release_notes=custom_release_notes
+    ))
 
 
 #######################################
