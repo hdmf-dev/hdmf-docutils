@@ -875,11 +875,13 @@ def _remove_lines_after(filepath, regex, number_of_line=1):
 
 
 def _append_to_file(filepath, content):
+    print("Updating file %s" % filepath)
     with open(filepath, "a", encoding="utf-8") as outfile:
         outfile.write(content)
 
 
 def _write_file(filepath, content):
+    print("Creating file %s" % filepath)
     with open(filepath, "w", encoding="utf-8") as outfile:
         outfile.write(content)
 
