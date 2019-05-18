@@ -75,10 +75,12 @@ except ImportError:
 try:
     # Force matplotlib to use Agg backend. Added to make the build work on ReadTheDocs
     import matplotlib
+
     matplotlib.use('Agg')
     # make sure that we can import pyplot an networkX
     from matplotlib import pyplot as plt
     from .doctools.render import NXGraphHierarchyDescription, HierarchyDescription
+
     # If all the imports worked then we can render the plots
     INCLUDE_GRAPHS = True
 except ImportError:
@@ -310,7 +312,7 @@ def render_data_type_section(section,
         # If the YAML are shown in a seperate chapter than add section headings
         if seperate_src_file:
             # Add a section to the file for the sources
-            src_sec_lable = LabelHelper.get_src_section_label(rt, spec_generate_src_file,  spec_show_yaml_src)
+            src_sec_lable = LabelHelper.get_src_section_label(rt, spec_generate_src_file, spec_show_yaml_src)
             type_src_doc.add_label(src_sec_lable)
             type_src_doc.add_subsubsection(section_heading)
             if extend_type is not None:

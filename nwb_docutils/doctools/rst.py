@@ -312,6 +312,7 @@ class RSTDocument(object):
         """
         import json
         import sys
+
         try:
             from ruamel import yaml
         except ImportError:
@@ -363,6 +364,7 @@ class RSTSectionLabelHelper(object):
     Simple helper class used to generate section, table and other labels in the RST document
     to support cross-referencing.
     """
+
     @staticmethod
     def get_section_label(neurodata_type):
         """
@@ -415,6 +417,7 @@ class RSTTable(object):
     """
     Helper class to generate RST tables
     """
+
     def __init__(self, cols):
         """
         Initalize the RSTTable

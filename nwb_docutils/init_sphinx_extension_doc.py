@@ -8,6 +8,7 @@ import argparse
 import os
 import re
 
+
 #######################################
 #  Define bool type for argparse
 #######################################
@@ -30,6 +31,7 @@ def bool_type(argument):
         else:
             raise ValueError('Parameter could not be converted to type bool')
 
+
 #######################################
 #  Define formatter for argparse
 #######################################
@@ -44,6 +46,7 @@ class RawDescriptionDefaultHelpArgParseFormatter(argparse.ArgumentDefaultsHelpFo
 
     """
     pass
+
 
 #####################################################
 #  Create README.md
@@ -174,6 +177,7 @@ In the regular Sphinx `source/conf.py` file, we can then also set:
 """ % (custom_description, custom_release_notes)
     return readme_txt
 
+
 #####################################################
 #  Create text for file describing RTD theme fixes
 #####################################################
@@ -193,6 +197,7 @@ def get_theme_overwrites():
    }
 }
 """
+
 
 #######################################
 #  Create text for the credits.rst file
@@ -243,7 +248,7 @@ def get_format_rst(spec_output_dir, output_master, project):
 Version |release| |today|
 
 .. .. contents::
-""" % (project.replace(' ', '_'),  heading, project, heading)
+""" % (project.replace(' ', '_'), heading, project, heading)
 
     format_rst_text += \
 """
@@ -534,6 +539,7 @@ spec_namespace_spec_cls = pynwb.spec.NWBNamespace
     # Return the custom settings python script
     return custom_sphinx_settings, custom_autodoc_settings
 
+
 #######################################
 #  Create text for our custom makefile
 #######################################
@@ -727,6 +733,7 @@ fulldoc:
 	$(MAKE) html
 	$(MAKE) latexpdf
 '''
+
 
 ##########################################
 #  Create the argpars command line parser
@@ -923,6 +930,7 @@ def init_sphinx(project, author, version, release, language, sphinx_master, outp
     except CalledProcessError:
         exit(0)
 
+
 ###########################################
 #  Write the custom configuration settings
 ###########################################
@@ -939,6 +947,7 @@ def write_custom_conf(output, **kwargs):
     outfile.write(custom_doc_autogen_settings)
     outfile.close()
 
+
 #######################################
 #  Write RTD theme overwrites
 #######################################
@@ -950,6 +959,7 @@ def write_theme_overwrites(output):
     outfile = open(outfilename, 'w', encoding='utf-8')
     outfile.write(get_theme_overwrites())
     outfile.close()
+
 
 #######################################
 #  Write custom makefile
@@ -981,6 +991,7 @@ def write_format_rst(output, format_master, project, spec_output_dir, output_mas
                                  project=project))
     outfile.close()
 
+
 ######################################
 #  Write the custom description file
 ######################################
@@ -1007,6 +1018,7 @@ def write_custom_description(output, custom_description, external_description):
         return os.path.basename(outfilename)
     else:
         return None
+
 
 ######################################
 #  Write the custom description file
@@ -1035,6 +1047,7 @@ def write_custom_release_notes(output, custom_release_notes, external_release_no
     else:
         return None
 
+
 #########################################################################
 #  Write custom index rst and delete the default one created by sphinx
 ########################################################################
@@ -1045,8 +1058,9 @@ def write_index_rst(output, format_master, project, master, sphinx_master, custo
     outfile.write(get_index_rst(
         project=project, format_master=format_master,
         custom_description=custom_description,
-        custom_release_notes = custom_release_notes))
+        custom_release_notes=custom_release_notes))
     outfile.close()
+
 
 #######################################
 #  Write the readme file

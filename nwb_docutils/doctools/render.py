@@ -66,7 +66,7 @@ class HierarchyDescription(dict):
             'data_type': data_type
         })
 
-    def add_attribute(self,  name, value, size=None):
+    def add_attribute(self, name, value, size=None):
         """
         Add an attribute
 
@@ -474,6 +474,7 @@ class NXGraphHierarchyDescription(object):
         :return: New graph layout with normalized coordinates
         """
         import numpy as np
+
         # Compute positions stats
         xpos = np.asarray([i[0] for i in graph_layout.values()])
         ypos = np.asarray([i[1] for i in graph_layout.values()])
@@ -494,6 +495,7 @@ class NXGraphHierarchyDescription(object):
         :return: Tupple with min/max x values
         """
         import numpy as np
+
         xpos = np.asarray([i[0] for i in self.pos.values()])
         xmin = xpos.min()
         xmax = xpos.max()
@@ -508,6 +510,7 @@ class NXGraphHierarchyDescription(object):
         :return: Tupple with min/max x values
         """
         import numpy as np
+
         ypos = np.asarray([i[1] for i in self.pos.values()])
         ymin = ypos.min()
         ymax = ypos.max()
