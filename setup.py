@@ -14,7 +14,7 @@ setup_args = {
     'cmdclass': versioneer.get_cmdclass(),
     'description': 'Collection of CLIs, scripts and modules useful to generate the NWB documentation',
     'long_description': readme,
-    'long_description_content_type': 'text/x-doctools; charset=UTF-8',
+    'long_description_content_type': 'text/x-rst; charset=UTF-8',
     'author': 'Oliver Ruebel',
     'author_email': 'oruebel@lbl.gov',
     'url': 'https://github.com/NeurodataWithoutBorders/nwb-docutils',
