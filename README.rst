@@ -47,8 +47,16 @@ Available Tools
 Available Modules
 -----------------
 
-* ``nwb_docutils/render.py``: This module is used to generate figures of the hierarchies of NWB-N files and
-  specifications as well as to help with the programmatic generation of reStructuredText (RST) documents.
+* ``nwb_docutils/doctools/*``: This package contains modules used to generate figures of the hierarchies of
+  NWB-N files and specifications as well as to help with the programmatic generation of reStructuredText (RST)
+  documents.
+
+
+Available Notebooks
+-------------------
+
+* `compare-hdf5-files.ipynb <https://github.com/NeurodataWithoutBorders/nwb-docutils/blob/master/nwb_docutils/compare-hdf5-files.ipynb>`_: This
+  notebook illustrates how to compare hdf5 files.
 
 
 History
