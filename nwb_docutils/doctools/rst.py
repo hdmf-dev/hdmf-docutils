@@ -14,7 +14,7 @@ class RSTDocument(object):
     ALIGN = ['top', 'middle', 'bottom', 'left', 'center', 'right']
 
     def __init__(self):
-        """Initalize empty RST document"""
+        """Initialize empty RST document"""
         self.document = ""
         self.newline = "\n"
         self.default_indent = '    '
@@ -60,8 +60,8 @@ class RSTDocument(object):
 
     def add_label(self, label):
         """
-        Add a section lable
-        :param label: name of the lable
+        Add a section label
+        :param label: name of the label
         """
         self.document += ".. _%s:" % label
         self.document += self.newline + self.newline
@@ -70,7 +70,7 @@ class RSTDocument(object):
     def get_reference(label, link_title=None):
         """
         Get RST text to create a reference to the given label
-        :param label: Name of the lable to link to
+        :param label: Name of the label to link to
         :param link_title: Text for the link
         :return: String with the inline reference text
         """
@@ -368,7 +368,7 @@ class RSTSectionLabelHelper(object):
     @staticmethod
     def get_section_label(neurodata_type):
         """
-        Get the label of the section with the documenation for the given neurodata_type
+        Get the label of the section with the documentation for the given neurodata_type
 
         :param neurodata_type: String with the name of the neurodata_type
         :return: String with the section label where the neurodatatype is described
@@ -420,7 +420,7 @@ class RSTTable(object):
 
     def __init__(self, cols):
         """
-        Initalize the RSTTable
+        Initialize the RSTTable
 
         :param cols: List of strings with the column labels. Or int with the number of columns
         """

@@ -1,5 +1,5 @@
 """
-Module with helper functions to render hdfm.spec format specfications to
+Module with helper functions to render hdfm.spec format specifications to
 RST documents.
 """
 from hdmf.spec.spec import GroupSpec, DatasetSpec, LinkSpec, AttributeSpec, RefSpec
@@ -299,7 +299,7 @@ class SpecToRST(object):
         :type show_yaml_src" bool
         :param file_dir: Directory where output RST docs should be stored. Required if file_per_type is True.
         :type file_dir: str or None
-        :param file_per_type: Generate a seperate rst files for each data_type and include them
+        :param file_per_type: Generate a separate rst files for each data_type and include them
                               in the src_doc and desc_doc (True). If set to False then write the
                               contents to src_doc and desc_doc directly.
         :type file_per_type: book
@@ -450,7 +450,7 @@ class SpecToRST(object):
         :param target_doc: Target RST document where the type hierarchy should be rendered to or None if a new document
                            should be created.
         :type target_doc: RSTDocument or Non
-        :param section_label: String with the label for the section (or None if no label should be addded)
+        :param section_label: String with the label for the section (or None if no label should be added)
         :param subsection_title: String with the title for the secton (or None if no section should be added)
 
         :returns: Tuple with: 1) RSTDocument with the type hierarchy,
@@ -664,7 +664,7 @@ class SpecToRST(object):
             # Create the description for the object
             spec_doc = SpecToRST.clean_schema_doc_string(doc_str=spec.doc,
                                                          add_prefix=rst_table.newline + rst_table.newline)
-            # Create the list of additonal object properties to be added as a list ot the doc
+            # Create the list of additional object properties to be added as a list ot the doc
             spec_doc += SpecToRST.render_specification_properties(spec=spec,
                                                                   newline=rst_table.newline,
                                                                   ignore_props=['primitive_type'])
@@ -740,7 +740,7 @@ class SpecToRST(object):
         :param appreviate_main_object_doc:  Abbreviate the documentation of the main object for which a table
                         is rendered in the table. This is commonly set to True as doc of the main object is already
                         rendered as the main intro for the section describing the object
-        :param show_subgroups_in_seperate_table: Should top-level subgroups be listed in a seperate table or as part
+        :param show_subgroups_in_seperate_table: Should top-level subgroups be listed in a separate table or as part
                         of the main dataset and attributes table
         :param sectype: The kind of section to be used for rendering the group spec. Allowable values are
                         'par' for paragraph, 'sec' for section, 'chp' for chapter, 'subsec' for subsection,

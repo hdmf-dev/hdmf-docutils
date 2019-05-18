@@ -492,7 +492,7 @@ class NXGraphHierarchyDescription(object):
     def suggest_xlim(self):
         """
         Suggest xlimits for plotting
-        :return: Tupple with min/max x values
+        :return: Tuple with min/max x values
         """
         import numpy as np
 
@@ -507,7 +507,7 @@ class NXGraphHierarchyDescription(object):
     def suggest_ylim(self):
         """
         Suggest ylimits for plotting
-        :return: Tupple with min/max x values
+        :return: Tuple with min/max x values
         """
         import numpy as np
 
@@ -572,11 +572,11 @@ class NXGraphHierarchyDescription(object):
         :param show_labels: Boolean indicating whether we should show the names of the nodes
         :param relationship_types: List of edge types that should be rendered. If None, then all edges will be rendered.
         :param figsize: The size of the matplotlib figure
-        :param label_offset: Offsets for the node lables. This may be either: i) None (default),
+        :param label_offset: Offsets for the node labels. This may be either: i) None (default),
                    ii) Tuple with constant (x,y) offset for the text labels, or
                    iii) Dict of tuples where the keys are the names of the nodes for which labels should be moved
                         and the values are the (x,y) offsets for the given nodes.
-        :param label_font_size: Font size for the lables
+        :param label_font_size: Font size for the labels
         :param xlim: The x limits to be used for the plot
         :param ylim: The y limits to be used for the plot
         :param legend_location: The legend location (e.g., 'upper left' , 'lower right')
@@ -601,7 +601,7 @@ class NXGraphHierarchyDescription(object):
             for relationship edges. This may also be a dict of per-relationship-typ alpha values, similar
             to relationship_colors.
         :param node_colors: Dict with the color strings of the different node types. This may also be a single
-                string in case that the same color should be used for all node types. Defaul behavior is:
+                string in case that the same color should be used for all node types. Default behavior is:
 
                 ```{'typed_dataset': 'blue',
                     'untyped_dataset': 'lightblue',
@@ -743,7 +743,7 @@ class NXGraphHierarchyDescription(object):
             labels = {i: os.path.basename(i) if len(os.path.basename(i)) > 0 else i for i in graph.nodes(data=False)}
             # Determine label positions
             if label_offset is not None:
-                # Move individual lables by the user-defined offsets
+                # Move individual labels by the user-defined offsets
                 if isinstance(label_offset, dict):
                     label_pos = deepcopy(pos)
                     for k, v in label_offset.items():
