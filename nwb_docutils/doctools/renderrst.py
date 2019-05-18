@@ -18,6 +18,7 @@ class DataTypeSection(dict):
     :ivar data_types: List of strings with the names of the data types to be rendered in this section
     :ivar intro: String (or None) with the introduction text for the section.
     """
+
     def __init__(self, title, data_types=None, intro=None):
         """
 
@@ -197,7 +198,7 @@ class SpecToRST(object):
         return clean_doc_str
 
     @staticmethod
-    def render_inherits_from(spec_catalog, data_type, prefix=None,  ignore_self=True):
+    def render_inherits_from(spec_catalog, data_type, prefix=None, ignore_self=True):
         """
         Render an RST string with a list of all the types the data_type inherits from with links to
         the corresponding sections.
@@ -219,7 +220,7 @@ class SpecToRST(object):
         re += ", ".join([RSTDocument.get_reference(RSTSectionLabelHelper.get_section_label(ct), ct)
                            for ct in ancestry[start_index:]])
         return re
-    
+
     @staticmethod
     def render_subtypes(spec_catalog, data_type, prefix=None):
         """

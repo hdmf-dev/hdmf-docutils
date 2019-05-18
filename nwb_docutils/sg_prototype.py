@@ -25,6 +25,7 @@ OPEN_DEFAULT = False
 TGT_DIR_DEFAULT_SUFFIX = os.path.abspath('_html_sg-prototype')
 TGT_DIR_DEFAULT = os.path.abspath(os.path.join('.', TGT_DIR_DEFAULT_SUFFIX))
 
+
 def assert_firefox():
 
     try:
@@ -116,6 +117,7 @@ def main():
     check_tgt_dir(tgt_dir, args.clobber)
 
     return build(src_file, tgt_dir=tgt_dir, open_html=open_html, clobber=args.clobber)
+
 
 if __name__ == "__main__":
     main()
