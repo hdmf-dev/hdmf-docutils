@@ -784,7 +784,7 @@ class SpecToRST(object):
         # Compile the documentation for the group and add it to the RST document
         gdoc = SpecToRST.clean_schema_doc_string(group_spec.doc,
                                                  add_prefix=rst_doc.newline+rst_doc.newline,
-                                                 add_postifix=rst_doc.newline,
+                                                 add_postfix=rst_doc.newline,
                                                  rst_format='**')
         gdoc += rst_doc.newline
         gdoc += SpecToRST.render_specification_properties(group_spec, rst_doc.newline, ignore_props=['primitive_type'])
