@@ -569,7 +569,7 @@ class SpecToRST(object):
             if spec.get('shape', None) is not None and 'shape' not in ignore_keys:
                 spec_prop_list.append('**Shape:** %s' % str(spec['shape']))
             if spec.get('required', None) is not None and 'required' not in ignore_keys:
-                spec_prop_list.append('**Reuqired:** %s' % str(spec['required']))
+                spec_prop_list.append('**Required:** %s' % str(spec['required']))
             if spec.get('value', None) is not None and 'value' not in ignore_keys:
                 spec_prop_list.append('**Value:** %s' % str(spec['value']))
             if spec.get('default_value', None) is not None and 'default_value' not in ignore_keys:
