@@ -79,7 +79,7 @@ jobs:
 
   - script: |
       python -m pip install -e .
-    displayName: 'Install nwb-docutils'
+    displayName: 'Install hdmf-docutils'
 
   - script: |
       pytest
