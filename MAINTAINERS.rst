@@ -19,7 +19,7 @@ Maintainers: How to make a new release ?
 
 ::
 
-    git tag -s -m "nwb-docutils ${release}" ${release} origin/master
+    git tag -s -m "hdmf-docutils ${release}" ${release} origin/master
     git push origin ${release}
 
 5. Create the source tarball and wheel:
@@ -35,7 +35,7 @@ Maintainers: How to make a new release ?
 
     twine upload -r pypitest dist/*
 
-Check the `PyPI testing package page <https://test.pypi.org/project/nwb-docutils/>`_.
+Check the `PyPI testing package page <https://test.pypi.org/project/hdmf-docutils/>`_.
 
 7. Upload the packages to the PyPI instance::
 
@@ -43,4 +43,4 @@ Check the `PyPI testing package page <https://test.pypi.org/project/nwb-docutils
 
     twine upload dist/*
 
-Check the `PyPI package page <https://pypi.org/project/nwb-docutils/>`_.
+Check the `PyPI package page <https://pypi.org/project/hdmf-docutils/>`_.

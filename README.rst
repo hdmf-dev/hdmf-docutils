@@ -4,16 +4,16 @@ NWB Documentation Utilities
 
 *This project is under active development. Its content, API and behavior may change at any time. We mean it.*
 
-.. image:: https://img.shields.io/pypi/l/nwb-docutils.svg
-    :target: https://github.com/NeurodataWithoutBorders/nwb-docutils/blob/master/license.txt
+.. image:: https://img.shields.io/pypi/l/hdmf-docutils.svg
+    :target: https://github.com/hdmf-dev/hdmf-docutils/blob/master/license.txt
     :alt:    PyPI - License
 
-.. image:: https://img.shields.io/pypi/v/nwb-docutils.svg
-    :target: https://pypi.org/project/nwb-docutils/
+.. image:: https://img.shields.io/pypi/v/hdmf-docutils.svg
+    :target: https://pypi.org/project/hdmf-docutils/
     :alt:    PyPI
 
-.. image:: https://dev.azure.com/NeurodataWithoutBorders/nwb-docutils/_apis/build/status/NeurodataWithoutBorders.nwb-docutils?branchName=master
-    :target: https://dev.azure.com/NeurodataWithoutBorders/nwb-docutils/_build/latest?definitionId=1&branchName=master
+.. image:: https://dev.azure.com/hdmf-dev/hdmf-docutils/_apis/build/status/hdmf-dev.hdmf-docutils?branchName=master
+    :target: https://dev.azure.com/hdmf-dev/hdmf-docutils/_build/latest?definitionId=1&branchName=master
     :alt:    Build Status
 
 Overview
@@ -21,7 +21,7 @@ Overview
 
 This project is a collection of CLIs, scripts and modules useful to generate the NWB documentation.
 
-Using nwb-docutils to generate documentation for an extension: http://pynwb.readthedocs.io/en/latest/extensions.html#documenting-extensions
+Using hdmf-docutils to generate documentation for an extension: http://pynwb.readthedocs.io/en/latest/extensions.html#documenting-extensions
 
 
 Installation
@@ -29,7 +29,7 @@ Installation
 
 ::
 
-  pip install nwb-docutils
+  pip install hdmf-docutils
 
 
 
@@ -47,7 +47,7 @@ Available Tools
 Available Modules
 -----------------
 
-* ``nwb_docutils/doctools/*``: This package contains modules used to generate figures of the hierarchies of
+* ``hdmf_docutils/doctools/*``: This package contains modules used to generate figures of the hierarchies of
   NWB-N files and specifications as well as to help with the programmatic generation of reStructuredText (RST)
   documents.
 
@@ -55,7 +55,7 @@ Available Modules
 Available Notebooks
 -------------------
 
-* `compare-hdf5-files.ipynb <https://github.com/NeurodataWithoutBorders/nwb-docutils/blob/master/nwb_docutils/compare-hdf5-files.ipynb>`_: This
+* `compare-hdf5-files.ipynb <https://github.com/hdmf-dev/hdmf-docutils/blob/master/hdmf_docutils/compare-hdf5-files.ipynb>`_: This
   notebook illustrates how to compare hdf5 files.
 
 
@@ -94,7 +94,7 @@ maintainers: how to make a release ?
 
    ::
 
-       git tag -s -m "nwb-docutils ${release}" ${release} origin/master
+       git tag -s -m "hdmf-docutils ${release}" ${release} origin/master
 
    And push
 
@@ -118,7 +118,7 @@ maintainers: how to make a release ?
        twine upload --sign -r pypitest dist/*
 
 
-8. Check the `PyPI testing package page <https://test.pypi.org/project/nwb-docutils/>`_.
+8. Check the `PyPI testing package page <https://test.pypi.org/project/hdmf-docutils/>`_.
 
 
 9. Upload the packages to the PyPI instance::
@@ -126,15 +126,15 @@ maintainers: how to make a release ?
     twine upload --sign dist/*
 
 
-10. Check the `PyPI package page <https://pypi.org/project/nwb-docutils/>`_.
+10. Check the `PyPI package page <https://pypi.org/project/hdmf-docutils/>`_.
 
 
 11. Create a virtual env, and make sure the package can be installed
 
     ::
 
-        mkvirtualenv test-nwb-docutils-install
-        pip install nwb-docutils
+        mkvirtualenv test-hdmf-docutils-install
+        pip install hdmf-docutils
 
 
 12. Cleanup
@@ -142,4 +142,4 @@ maintainers: how to make a release ?
     ::
 
         deactivate
-        rmvirtualenv test-nwb-docutils-install
+        rmvirtualenv test-hdmf-docutils-install

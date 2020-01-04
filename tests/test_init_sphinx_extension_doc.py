@@ -2,7 +2,7 @@
 import os
 import pytest
 
-from nwb_docutils.init_sphinx_extension_doc import main as init_sphinx_extension_doc
+from hdmf_docutils.init_sphinx_extension_doc import main as init_sphinx_extension_doc
 
 
 @pytest.mark.parametrize(

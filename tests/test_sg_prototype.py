@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from nwb_docutils.sg_prototype import build
+from hdmf_docutils.sg_prototype import build
 
 
 def test_build(tmpdir):

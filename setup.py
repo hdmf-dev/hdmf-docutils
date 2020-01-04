@@ -9,7 +9,7 @@ with open('README.rst', 'r') as fp:
 
 
 setup_args = {
-    'name': 'nwb_docutils',
+    'name': 'hdmf_docutils',
     'version': versioneer.get_version(),
     'cmdclass': versioneer.get_cmdclass(),
     'description': 'Collection of CLIs, scripts and modules useful to generate the NWB documentation',
@@ -17,7 +17,7 @@ setup_args = {
     'long_description_content_type': 'text/x-rst; charset=UTF-8',
     'author': 'Oliver Ruebel',
     'author_email': 'oruebel@lbl.gov',
-    'url': 'https://github.com/NeurodataWithoutBorders/nwb-docutils',
+    'url': 'https://github.com/hdmf-dev/hdmf-docutils',
     'license': "BSD",
     'install_requires': [
         'matplotlib',
@@ -31,12 +31,15 @@ setup_args = {
     ],
     'setup_requires': 'pytest-runner',
     'packages': find_packages(),
-    'package_data': {'nwb_docutils': ["*.ipynb"]},
+    'package_data': {'hdmf_docutils': ["*.ipynb"]},
     'entry_points': {
         'console_scripts': [
-            'nwb_generate_format_docs=nwb_docutils.generate_format_docs:main',
-            'nwb_init_sphinx_extension_doc=nwb_docutils.init_sphinx_extension_doc:main',
-            'nwb_gallery_prototype=nwb_docutils.sg_prototype:main'
+            'hdmf_generate_format_docs=hdmf_docutils.generate_format_docs:main',
+            'nwb_generate_format_docs=hdmf_docutils.generate_format_docs:nwb_main'
+            'hdmf_init_sphinx_extension_doc=hdmf_docutils.init_sphinx_extension_doc:main',
+            'nwb_init_sphinx_extension_doc=hdmf_docutils.init_sphinx_extension_doc:nwb_main',
+            'hdmf_gallery_prototype=hdmf_docutils.sg_prototype:main'
+            'nwb_gallery_prototype=hdmf_docutils.sg_prototype:nwb_main',
         ]
     },
     'classifiers': [
