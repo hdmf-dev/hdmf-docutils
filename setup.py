@@ -25,7 +25,7 @@ setup_args = {
         'pynwb',
         'hdmf',
         'pillow',
-        'sphinx==1.6.5',
+        'sphinx',
         'sphinx-gallery',
         'sphinx_rtd_theme'
     ],
