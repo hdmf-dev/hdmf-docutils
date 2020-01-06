@@ -16,6 +16,7 @@ import shutil
 from sys import platform as _platform
 import webbrowser
 import urllib.parse
+import warnings
 
 __author__ = """Nicholas Cain"""
 __email__ = 'nicholasc@alleninstitute.org'
@@ -92,6 +93,11 @@ def build(src_file, tgt_dir=TGT_DIR_DEFAULT, open_html=OPEN_DEFAULT, conda_env=N
         webbrowser.open(output_file_unsplit)
 
     return 0
+
+
+def nwb_main():
+    warnings.warn("nwb_sg_prototype is deprecated. Please use hdmf_sg_prototype", DeprecationWarning)
+    return main()
 
 
 def main():

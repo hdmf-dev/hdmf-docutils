@@ -2,7 +2,7 @@
 Module with helper functions to render hdfm.spec format specifications to
 RST documents.
 """
-from hdmf.spec.spec import GroupSpec, DatasetSpec, LinkSpec, AttributeSpec, RefSpec
+from hdmf.spec import GroupSpec, DatasetSpec, LinkSpec, AttributeSpec, RefSpec
 from .output import PrintHelper
 from collections import OrderedDict
 from .rst import RSTDocument, RSTTable, RSTSectionLabelHelper
@@ -324,8 +324,8 @@ class SpecToRST(object):
         # Create target RST files if necessary
         ns_desc_doc = desc_doc if not file_per_type else RSTDocument()
         ns_src_doc = src_doc if not file_per_type else RSTDocument()
-        ns_desc_label = "nwb-type-namespace-doc"
-        ns_src_label = "nwb-type-namespace-src"
+        ns_desc_label = "hdmf-type-namespace-doc"
+        ns_src_label = "hdmf-type-namespace-src"
         # Create the target doc
         if namespace_name is None:
             namespace_name = namespace_catalog.default_namespace

@@ -1,12 +1,9 @@
 """
-Generate figures and RST documents from the NWB YAML specification for the format specification documentation
+Generate figures and RST documents from the HDMF or NWB YAML specification for the format specification documentation
 """
 
 # TODO Make SpecToRST.render_namespace.type_hierarchy_include_html and type_hierarchy_include_latex configurable
 
-
-# Python 2/3 compatibility
-from __future__ import print_function
 
 from hdmf.spec.spec import GroupSpec, DatasetSpec
 from hdmf.spec.namespace import NamespaceCatalog
@@ -418,6 +415,11 @@ def render_data_type_section(section,
             desc_doc.add_latex_clearpage()
 
 
+def nwb_main():
+    warnings.warn("nwb_generate_format_docs is deprecated. Please use hdmf_generate_format_docs", DeprecationWarning)
+    return main()
+
+
 def main():
 
     # Set the output path for the doc sources to be generated
@@ -481,7 +483,7 @@ def main():
     # should be included in the main doc directly
     if spec_generate_src_file:
         src_doc = RSTDocument()
-        src_doc.add_label("nwb-type-specification-sources")
+        src_doc.add_label("hdmf-type-specification-sources")
         src_doc.add_section("Schema Sources")
     else:
         src_doc = None
@@ -521,7 +523,7 @@ def main():
     PrintHelper.print("------------------------------", PrintHelper.BOLD)
     # Add a clearpage command for latex to avoid possible troubles with figure placement outside of the current section
     desc_doc.add_latex_clearpage()
-    desc_doc.add_label("nwb-type-specifications")
+    desc_doc.add_label("hdmf-type-specifications")
     desc_doc.add_section("Type Specifications")
 
     # Render all the sections with the different types
