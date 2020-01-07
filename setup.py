@@ -22,7 +22,6 @@ setup_args = {
     'install_requires': [
         'matplotlib',
         'networkx',
-        'pynwb',
         'hdmf',
         'pillow',
         'sphinx',
@@ -66,7 +65,6 @@ setup_args = {
                 'open-source '
                 'open-science '
                 'reproducible-research '
-                'PyNWB '
                 'NWB '
                 'NWB:N '
                 'NeurodataWithoutBorders',
