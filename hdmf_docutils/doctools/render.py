@@ -10,7 +10,7 @@ import warnings
 
 class HierarchyDescription(dict):
     """
-    Dictionary data structure used to describe the contents of the specification or NWB file hierarchy.
+    Dictionary data structure used to describe the contents of the specification or HDMF object hierarchy.
     This simple helper data structure was designed to ease rendering of object hierarchies but may
     be useful for other purposes as well.
 
@@ -44,7 +44,7 @@ class HierarchyDescription(dict):
         :param name: Name of the dataset (full path)
         :param shape: Shape of the dataset
         :param dtype: Data type of the data
-        :param data_type: object data_type (e.g, NWB neurodata_type)
+        :param data_type: object data_type (e.g., NWB neurodata_type)
         """
         self['datasets'].append({
             'name': name,
