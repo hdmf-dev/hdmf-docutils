@@ -9,6 +9,7 @@ from hdmf.spec.spec import GroupSpec, DatasetSpec
 from hdmf.spec.namespace import NamespaceCatalog
 from hdmf.spec.namespace import SpecNamespace
 import warnings
+import traceback
 import os
 
 from .doctools.rst import RSTSectionLabelHelper as LabelHelper
@@ -296,7 +297,7 @@ def render_data_type_section(section,
             except (KeyboardInterrupt, SystemExit):
                 raise
             except:
-                PrintHelper.print(rt + '-- RENDER HIERARCHY FAILED',
+                PrintHelper.print(rt + '-- RENDER HIERARCHY FAILED: ' + traceback.format_exc(),
                                   PrintHelper.FAIL)
         else:
             if show_hierarchy_plots:
