@@ -36,12 +36,13 @@ Installation
 Available Tools
 ---------------
 
-* ``nwb_generate_format_docs``: Generate figures and RST documents from the HDMF YAML specification for the
-  format specification documentation.
+* ``hdmf_generate_format_docs``: Generate figures and RST documents from the HDMF YAML specification for the
+  format specification documentation. Previously called "nwb_generate_format_docs".
 
-* ``nwb_init_sphinx_extension_doc``: Create format specification SPHINX documentation for an HDMF extension.
+* ``hdmf_init_sphinx_extension_doc``: Create format specification SPHINX documentation for an HDMF extension.
+  Previously called "nwb_init_sphinx_extension_doc".
 
-* ``nwb_gallery_prototype``
+* ``hdmf_gallery_prototype``: Tool for prototyping sphinx gallery examples. Previously called "nwb_gallery_prototype".
 
 
 Available Modules
@@ -62,7 +63,9 @@ Available Notebooks
 History
 -------
 
-nwb-utils was initially a sub-directory of the nwb-schema project. Corresponding history was extracted during
+nwb-docutils was renamed to hdmf-docutils and generalized to be (mostly) independent of NWB in January, 2020.
+
+nwb-docutils was initially a sub-directory of the nwb-schema project. Corresponding history was extracted during
 the `4th NWB Hackathon <https://neurodatawithoutborders.github.io/nwb_hackathons/HCK04_2018_Seattle/>`_ into a
 dedicated *pip-installable* project to facilitate its use by both core NWB documentation projects and various
 NWB extensions.

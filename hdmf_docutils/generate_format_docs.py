@@ -1,13 +1,11 @@
 """
-Generate figures and RST documents from the HDMF or NWB YAML specification for the format specification documentation
+Generate figures and RST documents from the HDMF YAML specification for the format specification documentation
 """
 
 # TODO Make SpecToRST.render_namespace.type_hierarchy_include_html and type_hierarchy_include_latex configurable
 
 
-from hdmf.spec.spec import GroupSpec, DatasetSpec
-from hdmf.spec.namespace import NamespaceCatalog
-from hdmf.spec.namespace import SpecNamespace
+from hdmf.spec import GroupSpec, DatasetSpec, NamespaceCatalog, SpecNamespace
 import warnings
 import traceback
 import os
