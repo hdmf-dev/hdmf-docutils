@@ -420,7 +420,7 @@ class NXGraphHierarchyDescription(object):
                 nodes_at_level[xpos] = 1
 
         curr_nodes_at_level = {i: 0 for i in nodes_at_level.keys()}
-        for i, v in enumerate(np.sort(allnodes)):
+        for v in np.sort(list(allnodes)):
             xpos = len(v.split('/')) if v != '/' else 1
             ypos = 1 - float(curr_nodes_at_level[xpos]) / nodes_at_level[xpos] * 1
             curr_nodes_at_level[xpos] += 1
