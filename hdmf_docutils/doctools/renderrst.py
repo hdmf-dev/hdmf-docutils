@@ -693,8 +693,8 @@ class SpecToRST(object):
                                             depth=depth + 1)
         # Recursively add all Links for the current spec
         if isinstance(spec, GroupSpec) and show_sublinks:
-            for l in spec.links:
-                SpecToRST.render_spec_table(spec=l,
+            for link in spec.links:
+                SpecToRST.render_spec_table(spec=link,
                                             rst_table=rst_table,
                                             depth_char=depth_char,
                                             depth=depth + 1)
