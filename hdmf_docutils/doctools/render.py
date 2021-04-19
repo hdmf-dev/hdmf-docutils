@@ -178,8 +178,8 @@ class HierarchyDescription(dict):
                                                target=gn,
                                                name=gn+"_managed_by_"+obj_name,
                                                rtype='managed_by')
-                for l in obj.links:
-                    ln = update_stats(l, obj_name)
+                for link in obj.links:
+                    ln = update_stats(link, obj_name)
                     specstats.add_relationship(source=obj_name,
                                                target=ln,
                                                name=ln+"_managed_by_"+obj_name,
@@ -376,8 +376,8 @@ class NXGraphHierarchyDescription(object):
             for g in data['attributes']:
                 graph.add_node(g['name'])
         if include_links:
-            for l in data['links']:
-                graph.add_node(l['name'])
+            for link in data['links']:
+                graph.add_node(link['name'])
 
         # Create edges from relationships
         rel_list = include_relationships \
