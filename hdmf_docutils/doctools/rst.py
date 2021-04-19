@@ -522,10 +522,10 @@ class RSTTable(object):
             if newline in r:
                 max(num_lines, len(r.split(newline)))
         row_text = ''
-        for l in range(num_lines):
+        for link in range(num_lines):
             row_text += '    |'
             for ri in range(len(row)):
-                cell = row_lines[ri][l] if len(row_lines[ri]) > l else ''
+                cell = row_lines[ri][link] if len(row_lines[ri]) > link else ''
                 row_text += RSTTable.normalize_cell(cell, col_width=col_widths[ri]) + '|'
             row_text += newline
         return row_text

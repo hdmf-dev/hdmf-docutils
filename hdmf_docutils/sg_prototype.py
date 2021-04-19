@@ -68,7 +68,7 @@ def build(src_file, tgt_dir=TGT_DIR_DEFAULT, open_html=OPEN_DEFAULT, conda_env=N
         err_code = subprocess.call('make html', shell=True, cwd=docs_dir)
     else:
         err_code = subprocess.call('source activate %s && \
-                                    make html' % (conda_env, docs_dir), shell=True, cwd=docs_dir)
+                                    make html' % conda_env, shell=True, cwd=docs_dir)
     assert err_code == 0
 
     # Move built html to tgt_dir:
