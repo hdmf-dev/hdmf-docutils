@@ -685,7 +685,6 @@ class NXGraphHierarchyDescription(object):
                                    node_shape=n_shape[ntype],
                                    node_size=n_size[ntype],
                                    alpha=n_alpha[ntype],
-                                   font_family='STIXGeneral',
                                    label=n_legend[ntype])
 
         # Define edge colors and alpha values
