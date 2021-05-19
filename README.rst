@@ -69,3 +69,44 @@ nwb-docutils was initially a sub-directory of the nwb-schema project. Correspond
 the `4th NWB Hackathon <https://neurodatawithoutborders.github.io/nwb_hackathons/HCK04_2018_Seattle/>`_ into a
 dedicated *pip-installable* project to facilitate its use by both core NWB documentation projects and various
 NWB extensions.
+
+Usage
+-----
+
+.. code-block:: text
+
+    pip install hdmf-docutils
+
+For the purpose of this example, we assume that our current directory has the following structure.
+
+
+.. code-block:: text
+
+    - my_extension/
+      - my_extension_source/
+          - mylab.namespace.yaml
+          - mylab.specs.yaml
+          - ...
+          - docs/  (Optional)
+              - mylab_description.rst
+              - mylab_release_notes.rst
+
+In addition to Python 3.x, you will also need ``sphinx`` (including the ``sphinx-quickstart`` tool) installed.
+Sphinx is available here http://www.sphinx-doc.org/en/stable/install.html .
+
+We can now create the sources of our documentation as follows:
+
+.. code-block:: text
+
+    python3 hdmf_init_sphinx_extension_doc  \
+                 --project my-extension \
+                 --author "Dr. Master Expert" \
+                 --version "1.2.3" \
+                 --release alpha \
+                 --output my_extension_docs \
+                 --spec_dir my_extension_source \
+                 --namespace_filename mylab.namespace.yaml \
+                 --default_namespace mylab
+                 --external_description my_extension_source/docs/mylab_description.rst \  (Optional)
+                 --external_release_notes my_extension_source/docs/mylab_release_notes.rst \  (Optional)
+
