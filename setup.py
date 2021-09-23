@@ -37,8 +37,6 @@ setup_args = {
             'nwb_generate_format_docs=hdmf_docutils.generate_format_docs:nwb_main',
             'hdmf_init_sphinx_extension_doc=hdmf_docutils.init_sphinx_extension_doc:main',
             'nwb_init_sphinx_extension_doc=hdmf_docutils.init_sphinx_extension_doc:nwb_main',
-            'hdmf_gallery_prototype=hdmf_docutils.sg_prototype:main',
-            'nwb_gallery_prototype=hdmf_docutils.sg_prototype:nwb_main'
         ]
     },
     'classifiers': [
