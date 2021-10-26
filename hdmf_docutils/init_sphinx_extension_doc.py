@@ -377,8 +377,11 @@ def run_doc_autogen(_):
 
 def setup(app):
     app.connect('builder-inited', run_doc_autogen)
-    app.add_stylesheet("theme_overrides.css")  # overrides for wide tables in RTD theme
-
+    # overrides for wide tables in RTD theme
+    try:
+        app.add_stylesheet("theme_overrides.css")  # Used by older version of Sphinx
+    except AttributeError:
+        app.add_css_file("theme_overrides.css")  # Used by newer Sphinx versions
 
 # -- Customize sphinx settings
 numfig = True
