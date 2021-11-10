@@ -356,7 +356,10 @@ import sphinx_rtd_theme  # noqa: E402
 import textwrap  # noqa: E402
 
 # -- Options for intersphinx  ---------------------------------------------
-intersphinx_mapping.update({'core': ('https://nwb-schema.readthedocs.io/en/latest/', None)})
+intersphinx_mapping.update({
+    'core': ('https://nwb-schema.readthedocs.io/en/latest/', None),
+    'hdmf-common': ('https://hdmf-common-schema.readthedocs.io/en/latest/', None),
+})
 
 # -- Generate sources from YAML---------------------------------------------------
 # Always rebuild the source docs from YAML even if the folder with the source files already exists
