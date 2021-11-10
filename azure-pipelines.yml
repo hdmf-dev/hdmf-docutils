@@ -41,9 +41,6 @@ jobs:
       Linux-py3.7:
         imageName: 'ubuntu-20.04'
         pythonVersion: '3.7'
-      Linux-py3.6:
-        imageName: 'ubuntu-20.04'
-        pythonVersion: '3.6'
 
       macOS-py3.9:
         imageName: 'macos-10.15'
@@ -54,9 +51,6 @@ jobs:
       macOS-py3.7:
         imageName: 'macos-10.15'
         pythonVersion: '3.7'
-      macOS-py3.6:
-        imageName: 'macos-10.15'
-        pythonVersion: '3.6'
 
       Windows-py3.9:
         imageName: 'windows-2019'
@@ -67,9 +61,6 @@ jobs:
       Windows-py3.7:
         imageName: 'windows-2019'
         pythonVersion: '3.7'
-      Windows-py3.6:
-        imageName: 'windows-2019'
-        pythonVersion: '3.6'
 
   pool:
     vmImage: $(imageName)
