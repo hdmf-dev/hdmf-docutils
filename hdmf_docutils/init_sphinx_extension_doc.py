@@ -263,8 +263,8 @@ Version |release| |today|
 def get_index_rst(project, format_master, custom_description=None, custom_release_notes=None):
     index_rst = \
 """Specification for the %s extension
-==================================
-""" % project
+%s
+""" % (project, '=' * (len(project) + 32))
 
     if custom_description is not None:
         index_rst += \
