@@ -760,7 +760,7 @@ def define_cl_args():
     parser.add_argument('--release', dest='release', action='store', type=str, required=True,
                         help='Release of the project/docs')
     parser.add_argument('--language', dest='language', action='store', type=str, required=False,
-                        help='Document language', default='English')
+                        help='Document language', default='en')
     parser.add_argument('--master', dest='master', action='store', type=str, required=False,
                         help='Master document name', default='index.rst')
     parser.add_argument('--credits_master', dest='credits_master', action='store', type=str, required=False,
