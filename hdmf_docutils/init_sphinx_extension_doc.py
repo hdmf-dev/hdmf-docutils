@@ -346,7 +346,9 @@ def get_custom_settings(utils_dir,
     """
     # Define the base html and latex settings
     custom_sphinx_settings = \
-"""############################################################################
+"""
+
+############################################################################
 #  CUSTOM CONFIGURATIONS ADDED BY THE NWB TOOL FOR GENERATING FORMAT DOCS
 ###########################################################################
 
@@ -354,7 +356,7 @@ import sphinx_rtd_theme  # noqa: E402
 import textwrap  # noqa: E402
 
 # -- Options for intersphinx  ---------------------------------------------
-intersphinx_mapping = {'core': ('https://nwb-schema.readthedocs.io/en/latest/', None)}
+intersphinx_mapping.update({'core': ('https://nwb-schema.readthedocs.io/en/latest/', None)})
 
 # -- Generate sources from YAML---------------------------------------------------
 # Always rebuild the source docs from YAML even if the folder with the source files already exists
@@ -920,26 +922,10 @@ def init_sphinx(project, author, version, release, language, sphinx_master, outp
 
         print("Cleaning file %s" % conf_py)
 
-        # Remove example of intersphinx configuration
-        _remove_lines(
-            conf_py,
-            ['# Example configuration for intersphinx: refer to the Python standard library.',
-             'intersphinx_mapping = {\'https://docs.python.org/\': None}']
-        )
-
-        # Fix indent of intersphinx extension list
-        _replace_line_text(conf_py, '    \'sphinx.ext.', '              \'sphinx.ext.')
-
-        # Remove timestamp info added by sphinx-quickstart
-        _remove_lines_after(conf_py, '# simulation_output documentation build configuration file, created by', 5)
-        _remove_lines(conf_py, ['# simulation_output documentation build configuration file, created by'])
-
         # Remove empty directories
         os.rmdir(os.path.join(output, "build"))
         os.rmdir(os.path.join(output, "source", "_templates"))
 
-        # Remove empty lines from the end of files
-        _write_lines(conf_py, _read_lines(conf_py)[:-2])
     except CalledProcessError:
         exit(0)
 
