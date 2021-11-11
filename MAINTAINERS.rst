@@ -19,7 +19,7 @@ Maintainers: How to make a new release ?
 
 ::
 
-    git tag -s -m "hdmf-docutils ${release}" ${release} origin/master
+    git tag -s -m "hdmf-docutils ${release}" ${release} origin/main
     git push origin ${release}
 
 5. Create the source tarball and wheel:
@@ -33,7 +33,8 @@ Maintainers: How to make a new release ?
 
 ::
 
-    twine upload -r pypitest dist/*
+    pip install --upgrade twine
+    twine upload -r testpypi dist/*
 
 Check the `PyPI testing package page <https://test.pypi.org/project/hdmf-docutils/>`_.
 
