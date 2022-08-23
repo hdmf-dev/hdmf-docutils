@@ -11,7 +11,7 @@ import traceback
 import os
 
 from .doctools.rst import RSTSectionLabelHelper as LabelHelper
-from .doctools.rst import RSTDocument
+from .doctools.rst import RSTDocument, RSTFigure
 from .doctools.renderrst import SpecToRST, DataTypeSection
 from .doctools.output import PrintHelper, GitHashHelper
 
@@ -280,8 +280,7 @@ def render_data_type_section(section,
                                     bbox_inches='tight',
                                     pad_inches=0)
                         plt.close()
-                        type_desc_doc.add_figure(image_path='./_format_auto_docs/'+rt+".*",
-                                                 alt=rt)
+                        type_desc_doc.add_figure(RSTFigure(image_path='./_format_auto_docs/'+rt+".*", alt=rt))
                         if print_status:
                             PrintHelper.print("    " + rt + '-- RENDER OK.',
                                               PrintHelper.OKGREEN)

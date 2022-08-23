@@ -232,14 +232,13 @@ class RSTDocument(object):
         self.document += self.newline
 
     def add_figure(self,
-                   **kwargs):
+                   figure):
         """
         Add a Figure to the document
 
-        Parameters are the same as for RSTFigure
+        :param figure: RSTFigure to add to the document
         """
-        fig = RSTFigure(**kwargs)
-        fig.render(rst_doc=self)
+        figure.render(rst_doc=self)
 
     def add_sidebar(self, text, title, subtitle=None):
         """
