@@ -322,6 +322,16 @@ class RSTDocument(object):
         """
         rst_table.render(self, **kwargs)
 
+    def add_toc(self, rst_toc):
+        """
+        Render an RSTToc in this document
+
+        :param rst_toc: RST table of contents object to render
+        :type rst_toc: RSTToc
+        :return:
+        """
+        rst_toc.render(self)
+
     def write(self, filename, mode='w'):
         """
         Write the document to file
@@ -588,6 +598,94 @@ class RSTTable(object):
         return rst_doc
 
 
+class RSTToc:
+    """
+    Helper class for defining a table of contents
+    """
+    def __init__(
+            self,
+            entries: list = None,
+            caption: str = None,
+            name: str = None,
+            maxdepth: int = None,
+            titlesonly: bool = False,
+            hidden: bool = False,
+            numbered: bool = False,
+            glob: bool = False,
+            includehidden = False,
+            reversed = False
+    ):
+        self.entries = entries if entries is not None else []
+        self.caption = caption
+        self.name = name
+        self.maxdepth = maxdepth
+        self.titlesonly = titlesonly
+        self.hidden = hidden
+        self.numbered = numbered
+        self.glob = glob
+        self.includehidden = includehidden
+        self.reversed = reversed
+
+    def __iadd__(self, other):
+        """
+        Add and entry to the table of contents
+        :param other: String for a single entry or list, tuple, or set of strings with multiple entries, or
+                      another RSTToc object with the entries to add
+        :return:
+        """
+        if isinstance(other, str):
+            self.entries.append(other)
+        elif isinstance(other, (list, tuple, set)):
+            self.entries += list(other)
+        elif isinstance(other, RSTToc):
+            self.entries.append(other.entries)
+        else:
+            raise ValueError("Adding  to an RSTDoc with += only supported for str, list, tuple, set, and RSTToc")
+        return self
+
+    def render(self,
+               rst_doc: RSTDocument = None):
+        """
+        Render the toc to an RSTDocument
+
+        :param rst_doc: RSTDocument where the table should be rendered in or None if a new document should be created
+
+        :return: RSTDocument with the rendered toc
+        """
+        rst_doc = rst_doc if rst_doc is not None else RSTDocument()
+        rst_doc += rst_doc.newline
+        rst_doc += ".. toc::"
+        rst_doc += rst_doc.newline
+        if self.caption is not None:
+            rst_doc += (rst_doc.indent_text(':caption: %s' % self.caption) + rst_doc.newline)
+        if self.name is not None:
+            rst_doc += (rst_doc.indent_text(':name: %s' % self.name) + rst_doc.newline)
+        if self.maxdepth is not None:
+            rst_doc += (rst_doc.indent_text(':maxdepth: %i' % self.maxdepth) + rst_doc.newline)
+
+        # Add all the bool options
+        bool_options = {
+            'titlesonly': self.titlesonly,
+            'hidden': self.hidden,
+            'numbered': self.numbered,
+            'glob': self.glob,
+            'includehidden': self.includehidden,
+            'reversed': self.reversed
+        }
+        for option_name, option_value in bool_options.items():
+            if option_value:
+                rst_doc += (rst_doc.indent_text(":%s:" % option_name) + rst_doc.newline)
+        rst_doc += rst_doc.newline
+
+        # Add all the entries
+        for entry in self.entries:
+            rst_doc += (rst_doc.indent_text(entry) + rst_doc.newline)
+        rst_doc += rst_doc.newline
+
+        # Return the document
+        return rst_doc
+
+
 class RSTFigure:
     """
     Helper class to describe an RST Figure
@@ -659,7 +757,7 @@ class RSTFigure:
             rst_doc += (rst_doc.indent_text(':height: %s' % height_str) + rst_doc.newline)
         if self.width is not None:
             width_str = self.width if isinstance(self.width, str) else ("%i px" % self.width)
-            rst_doc += (rst_doc.indent_text(':width: %i px' % width_str) + rst_doc.newline)
+            rst_doc += (rst_doc.indent_text(':width: %s' % width_str) + rst_doc.newline)
         if self.align is not None:
             if self.align not in self.ALIGN:
                 raise ValueError('align not valid. Found %s expected one of %s' % (str(self.align), str(self.ALIGN)))
