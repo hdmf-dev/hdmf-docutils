@@ -654,14 +654,14 @@ class RSTToc:
         """
         rst_doc = rst_doc if rst_doc is not None else RSTDocument()
         rst_doc += rst_doc.newline
-        rst_doc += ".. toc::"
+        rst_doc += ".. toctree::"
         rst_doc += rst_doc.newline
         if self.caption is not None:
-            rst_doc += (rst_doc.indent_text(':caption: %s' % self.caption) + rst_doc.newline)
+            rst_doc += (rst_doc.indent_text(":caption: %s" % self.caption) + rst_doc.newline)
         if self.name is not None:
-            rst_doc += (rst_doc.indent_text(':name: %s' % self.name) + rst_doc.newline)
+            rst_doc += (rst_doc.indent_text(":name: %s" % self.name) + rst_doc.newline)
         if self.maxdepth is not None:
-            rst_doc += (rst_doc.indent_text(':maxdepth: %i' % self.maxdepth) + rst_doc.newline)
+            rst_doc += (rst_doc.indent_text(":maxdepth: %i" % self.maxdepth) + rst_doc.newline)
 
         # Add all the bool options
         bool_options = {
