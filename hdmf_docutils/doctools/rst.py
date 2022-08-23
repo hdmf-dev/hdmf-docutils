@@ -236,9 +236,10 @@ class RSTDocument(object):
         """
         Add a Figure to the document
 
-        :param figure: RSTFigure to add to the document
+        :param figure: RSTFigure to add to the document. If set to None then do nothing
         """
-        figure.render(rst_doc=self)
+        if figure is not None:
+            figure.render(rst_doc=self)
 
     def add_sidebar(self, text, title, subtitle=None):
         """
