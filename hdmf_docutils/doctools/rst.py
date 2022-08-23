@@ -19,6 +19,28 @@ class RSTDocument(object):
         self.newline = "\n"
         self.default_indent = '    '
 
+    def __str__(self):
+        return self.document
+
+    def __iadd__(self, other):
+        """Add other to this document"""
+        if isinstance(other, str):
+            self.document += other
+            return self
+        elif isinstance(other, RSTDocument):
+            self.document += other.document
+            return self
+        else:
+            raise ValueError("+= for RSTDocument only supported with string and RSTDocument objects")
+
+    def __add__(self, other):
+        """Create a new RSTDocument containing the text of this and the other document"""
+        new_rst_doc = RSTDocument()
+        new_rst_doc.document = self.document + other.document
+        new_rst_doc.newline = self.newline
+        new_rst_doc.default_indent = self.default_indent
+        return new_rst_doc
+
     @staticmethod
     def __get_headingline(title, heading_char):
         """Create a heading line for a given title"""
@@ -210,59 +232,14 @@ class RSTDocument(object):
         self.document += self.newline
 
     def add_figure(self,
-                   img,
-                   caption=None,
-                   legend=None,
-                   alt=None,
-                   height=None,
-                   width=None,
-                   scale=None,
-                   align=None,
-                   target=None):
+                   **kwargs):
         """
+        Add a Figure to the document
 
-        :param img: Path to the image to be shown as part of the figure.
-        :param caption: Optional caption for the figure
-        :type caption: String or RSTDocument
-        :param legend: Figure legend
-        :type legend: String or RST Document
-        :param alt: Alternate text.  A short description of the image used when the image cannot be displayed.
-        :param height: Height of the figure in pixel
-        :type height: Int
-        :param width: Width of the figure in pixel
-        :type width: Int
-        :param scale: Uniform scaling of the figure in %. Default is 100.
-        :type scale: Int
-        :param align: Alignment of the figure. One of RTDDocument.ALIGN
-        :param target: Hyperlink to be placed on the image.
+        Parameters are the same as for RSTFigure
         """
-        self.document += self.newline
-        self.document += ".. figure:: %s" % img
-        self.document += self.newline
-        if scale is not None:
-            self.document += (self.indent_text(':scale: %i' % scale) + ' %' + self.newline)
-        if alt is not None:
-            self.document += (self.indent_text(':alt: %s' % alt) + self.newline)
-        if height is not None:
-            self.document += (self.indent_text(':height: %i px' % height) + self.newline)
-        if width is not None:
-            self.document += (self.indent_text(':width: %i px' % width) + self.newline)
-        if align is not None:
-            if align not in self.ALIGN:
-                raise ValueError('align not valid. Found %s expected one of %s' % (str(align), str(self.ALIGN)))
-            self.document += (self.indent_text(':align: %s' % align) + self.newline)
-        if target is not None:
-            self.document += (self.indent_text(':target: %s' % target) + self.newline)
-        self.document += self.newline
-        if caption is not None:
-            curr_caption = caption if not isinstance(caption, RSTDocument) else caption.document
-            self.document += (self.indent_text(curr_caption) + self.newline)
-        if legend is not None:
-            if caption is None:
-                self.document += (self.indent_text('.. ') + self.newline + self.default_indent + self.newline)
-            curr_legend = legend if not isinstance(legend, RSTDocument) else legend.document
-            self.document += (self.indent_text(curr_legend) + self.newline)
-        self.document += self.newline
+        fig = RSTFigure(**kwargs)
+        fig.render(rst_doc=self)
 
     def add_sidebar(self, text, title, subtitle=None):
         """
@@ -438,6 +415,10 @@ class RSTTable(object):
     def __len__(self):
         return self.num_rows()
 
+    def __str__(self):
+        """Render figure as string"""
+        return self.render(rst_doc=None).document
+
     def num_rows(self):
         """
         :return: Number of rows in the table
@@ -564,6 +545,8 @@ class RSTTable(object):
         :param table_ref: Name of the reference to be used for the table
         :param latex_tablecolumns: Latex columns description to be rendered as part of the Sphinx tabularcolumns::
                     argument. E.g. '|p{3.5cm}|p{1cm}|p{10.5cm}|'
+
+        :returns: RSTDocument with the rendered table.
         """
         if len(self.__table) == 0 and ignore_empty:
             return rst_doc if rst_doc is not None else RSTDocument()
@@ -604,3 +587,98 @@ class RSTTable(object):
 
         # Return the table
         return rst_doc
+
+
+class RSTFigure:
+    """
+    Helper class to describe an RST Figure
+
+    :ivar image_path: Path to the image to be shown as part of the figure.
+    :ivar caption: Optional caption for the figure
+    :ivar legend: Figure legend
+    :ivar alt: Alternate text.  A short description of the image used when the image cannot be displayed.
+    :ivar height: Integer height of the figure in pixel or string which may include the metric (e.g., 50%)
+    :ivar width: Integer width of the figure in pixel or string which may include the metric (e.g., 50%)
+    :ivar scale: Uniform scaling of the figure in %. Default is 100.
+    :ivar align: Alignment of the figure. One of RTDDocument.ALIGN
+    :ivar target: Hyperlink to be placed on the image.
+    """
+    def __init__(
+            self,
+            image_path,
+            caption=None,
+            legend=None,
+            alt=None,
+            height=None,
+            width=None,
+            scale=None,
+            align=None,
+            target=None):
+        """
+
+        :param image_path: Path to the image to be shown as part of the figure.
+        :param caption: Optional caption for the figure
+        :type caption: String or RSTDocument
+        :param legend: Figure legend
+        :type legend: String or RST Document
+        :param alt: Alternate text.  A short description of the image used when the image cannot be displayed.
+        :param height: Integer height of the figure in pixel or string which may include the metric (e.g., 50%)
+        :param width: Integer width of the figure in pixel or string which may include the metric (e.g., 50%)
+        :param scale: Uniform scaling of the figure in %. Default is 100.
+        :param align: Alignment of the figure. One of RTDDocument.ALIGN
+        :param target: Hyperlink to be placed on the image.
+        """
+        self.image_path = image_path
+        self.caption = caption
+        self.legend = legend
+        self.alt = alt
+        self.height = height
+        self.width = width
+        self.scale = scale
+        self.align = align
+        self.target = target
+
+    def render(self,
+               rst_doc: RSTDocument = None):
+        """
+        Render the figure to an RSTDocument
+
+        :param rst_doc: RSTDocument where the table should be rendered in or None if a new document should be created
+
+        :return: RSTDocument with the rendered figure.
+        """
+        rst_doc = rst_doc if rst_doc is not None else RSTDocument()
+        rst_doc += rst_doc.newline
+        rst_doc += ".. figure:: %s" % self.image_path
+        rst_doc += rst_doc.newline
+        if self.scale is not None:
+            rst_doc += (rst_doc.indent_text(':scale: %i' % self.scale) + ' %' + rst_doc.newline)
+        if self.alt is not None:
+            rst_doc += (rst_doc.indent_text(':alt: %s' % self.alt) + rst_doc.newline)
+        if self.height is not None:
+            height_str = self.height if isinstance(self.height, str) else ("%i px" % self.height)
+            rst_doc += (rst_doc.indent_text(':height: %s' % height_str) + rst_doc.newline)
+        if self.width is not None:
+            width_str = self.width if isinstance(self.width, str) else ("%i px" % self.width)
+            rst_doc += (rst_doc.indent_text(':width: %i px' % width_str) + rst_doc.newline)
+        if self.align is not None:
+            if self.align not in self.ALIGN:
+                raise ValueError('align not valid. Found %s expected one of %s' % (str(self.align), str(self.ALIGN)))
+            rst_doc += (rst_doc.indent_text(':align: %s' % self.align) + rst_doc.newline)
+        if self.target is not None:
+            rst_doc += (rst_doc.indent_text(':target: %s' % self.target) + rst_doc.newline)
+        rst_doc += rst_doc.newline
+        if self.caption is not None:
+            curr_caption = self.caption if not isinstance(self.caption, RSTDocument) else self.caption.document
+            rst_doc += (rst_doc.indent_text(curr_caption) + rst_doc.newline)
+        if self.legend is not None:
+            if self.caption is None:
+                rst_doc += (rst_doc.indent_text('.. ') + rst_doc.newline + self.default_indent + rst_doc.newline)
+            curr_legend = self.legend if not isinstance(self.legend, RSTDocument) else self.legend.document
+            rst_doc += (rst_doc.indent_text(curr_legend) + rst_doc.newline)
+        rst_doc += rst_doc.newline
+        return rst_doc
+
+    def __str__(self):
+        """Render figure as string"""
+        return self.render(rst_doc=None).document

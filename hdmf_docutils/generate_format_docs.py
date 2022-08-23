@@ -280,7 +280,8 @@ def render_data_type_section(section,
                                     bbox_inches='tight',
                                     pad_inches=0)
                         plt.close()
-                        type_desc_doc.add_figure(img='./_format_auto_docs/'+rt+".*", alt=rt)
+                        type_desc_doc.add_figure(image_path='./_format_auto_docs/'+rt+".*",
+                                                 alt=rt)
                         if print_status:
                             PrintHelper.print("    " + rt + '-- RENDER OK.',
                                               PrintHelper.OKGREEN)
