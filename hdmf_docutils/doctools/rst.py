@@ -612,8 +612,8 @@ class RSTToc:
             hidden: bool = False,
             numbered: bool = False,
             glob: bool = False,
-            includehidden = False,
-            reversed = False
+            includehidden: bool = False,
+            reversed: bool = False
     ):
         self.entries = entries if entries is not None else []
         self.caption = caption
