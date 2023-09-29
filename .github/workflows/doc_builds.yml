@@ -36,7 +36,7 @@ jobs:
       - name: Build NWB-Schema Docs
         run: |
           cd nwb-schema
-          cd docs
+          cd docs/format
           make clean
           make html
           
