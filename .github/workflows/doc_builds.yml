@@ -15,25 +15,25 @@ jobs:
           python-version: "3.11"
           
       - name: Clone HDMF-Common-Schema and Install Requirements
-        run:
+        run: |
           git clone https://github.com/hdmf-dev/hdmf-common-schema.git
           cd hdmf-common-schema
           python -m pip install -r requirements-doc.txt
 
       - name: Build HDMF-Common-Schema Docs
-        run:
+        run: |
           cd docs
           make clean
           make html
 
       - name: Clone NWB-Schema and Install Requirements
-        run:
+        run: |
           git clone https://github.com/NeurodataWithoutBorders/nwb-schema.git
           cd nwb-schema
           python -m pip install -r requirements-doc.txt
 
       - name: Build NWB-Schema Docs
-        run: 
+        run: |
           cd docs
           make clean
           make html
