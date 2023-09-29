@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
@@ -15,26 +17,28 @@ jobs:
           python-version: "3.11"
           
       - name: Clone HDMF-Common-Schema and Install Requirements
-        run:
+        run: |
           git clone https://github.com/hdmf-dev/hdmf-common-schema.git
           cd hdmf-common-schema
           python -m pip install -r requirements-doc.txt
 
       - name: Build HDMF-Common-Schema Docs
-        run:
+        run: |
+          cd hdmf-common-schema
           cd docs
           make clean
           make html
 
       - name: Clone NWB-Schema and Install Requirements
-        run:
+        run: |
           git clone https://github.com/NeurodataWithoutBorders/nwb-schema.git
           cd nwb-schema
           python -m pip install -r requirements-doc.txt
 
       - name: Build NWB-Schema Docs
-        run: 
-          cd docs
+        run: |
+          cd nwb-schema
+          cd docs/format
           make clean
           make html
           
