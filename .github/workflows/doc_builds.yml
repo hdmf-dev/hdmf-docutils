@@ -22,6 +22,7 @@ jobs:
 
       - name: Build HDMF-Common-Schema Docs
         run: |
+          cd hdmf-common-schema
           cd docs
           make clean
           make html
@@ -34,6 +35,7 @@ jobs:
 
       - name: Build NWB-Schema Docs
         run: |
+          cd nwb-schema
           cd docs
           make clean
           make html
