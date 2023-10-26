@@ -288,17 +288,14 @@ class RSTDocument(object):
         :return: YAML string for the current specification
         """
         import json
-        import sys
-
-        try:
-            from ruamel import yaml
-        except ImportError:
-            import yaml
+        from ruamel.yaml import YAML
+        from ruamel.yaml.compat import StringIO
         clean_spec = json.loads(json.dumps(spec, sort_keys=True, indent=4, separators=(',', ': ')))
-        if sys.version_info[0] == 3:
-            return yaml.dump(clean_spec, default_flow_style=False)
-        else:
-            return yaml.safe_dump(clean_spec, default_flow_style=False)
+        yaml = YAML(pure=True)
+        yaml.default_flow_style = False
+        stream = StringIO()
+        yaml.dump(clean_spec, stream)
+        return stream.getvalue()
 
     def add_spec(self, spec):
         """
