@@ -26,7 +26,8 @@ setup_args = {
         'pillow',
         'sphinx',
         'sphinx-gallery',
-        'sphinx_rtd_theme'
+        'sphinx_rtd_theme',
+        'ruamel.yaml'
     ],
     'setup_requires': 'pytest-runner',
     'packages': find_packages(),
