@@ -24,7 +24,7 @@ jobs:
 
       - name: Install the current hdmf-docutils
         run: |
-          pip uninstall hdmf-docutils
+          pip uninstall hdmf-docutils --yes
           pip install .
 
       - name: Build HDMF-Common-Schema Docs
@@ -42,7 +42,7 @@ jobs:
 
       - name: Install the current hdmf-docutils
         run: |
-          pip uninstall hdmf-docutils
+          pip uninstall hdmf-docutils --yes
           pip install .
 
       - name: Build NWB-Schema Docs
