@@ -22,6 +22,11 @@ jobs:
           cd hdmf-common-schema
           python -m pip install -r requirements-doc.txt
 
+      - name: Install the current hdmf-docutils
+        run: |
+          pip uninstall hdmf-docutils
+          pip install .
+
       - name: Build HDMF-Common-Schema Docs
         run: |
           cd hdmf-common-schema
@@ -34,6 +39,11 @@ jobs:
           git clone https://github.com/NeurodataWithoutBorders/nwb-schema.git
           cd nwb-schema
           python -m pip install -r requirements-doc.txt
+
+      - name: Install the current hdmf-docutils
+        run: |
+          pip uninstall hdmf-docutils
+          pip install .
 
       - name: Build NWB-Schema Docs
         run: |
