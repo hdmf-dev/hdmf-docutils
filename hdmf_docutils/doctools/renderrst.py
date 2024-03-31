@@ -641,6 +641,10 @@ class SpecToRST(object):
         spec_name = depth_str
         if spec.get('name', None) is not None:
             spec_name += spec.name
+        elif isinstance(spec, LinkSpec):
+            spec_name += '<%s>' % RSTDocument.get_reference(
+                RSTSectionLabelHelper.get_section_label(spec.target_type),
+                spec.target_type)
         elif spec.data_type_def is not None:
             spec_name += '<%s>' % spec.data_type_def
         elif spec.data_type_inc is not None:
