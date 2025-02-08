@@ -1,9 +1,14 @@
 Maintainers: How to make a new release ?
 ----------------------------------------
 
+0. Create a GitHub release and the `publish_pypi.yml` workflow will automatically upload the packages to PyPI.
+
+How to make a manual release?
+-----------------------------
+
 *Fixed font text area below list commands expected to be entered in a bash shell*
 
-1. Configure ``~/.pypirc`` as described `here <https://packaging.python.org/distributing/#uploading-your-project-to-pypi>`_.
+1. Configure ``~/.pypirc`` as described `here <https://packaging.python.org/en/latest/tutorials/packaging-projects/#uploading-your-project-to-pypi>`_.
 
 2. Make sure the cli and module work as expected.
 
@@ -27,7 +32,8 @@ Maintainers: How to make a new release ?
 ::
 
     rm -rf dist/
-    python setup.py sdist bdist_wheel
+    python -m pip install build
+    python -m build 
 
 6. Upload the packages to the testing PyPI instance:
 

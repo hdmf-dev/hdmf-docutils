@@ -1,4 +1,0 @@
-include Legal.txt
-include license.txt
-include versioneer.py
-include hdmf_docutils/_version.py

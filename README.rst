@@ -5,23 +5,39 @@ HDMF Documentation Utilities
 *This project is under active development. Its content, API and behavior may change at any time. We mean it.*
 
 .. image:: https://img.shields.io/pypi/l/hdmf-docutils.svg
-    :target: https://github.com/hdmf-dev/hdmf-docutils/blob/master/license.txt
+    :target: https://github.com/hdmf-dev/hdmf-docutils/blob/main/license.txt
     :alt:    PyPI - License
 
 .. image:: https://img.shields.io/pypi/v/hdmf-docutils.svg
     :target: https://pypi.org/project/hdmf-docutils/
     :alt:    PyPI
 
-.. image:: https://dev.azure.com/hdmf-dev/hdmf-docutils/_apis/build/status/hdmf-dev.hdmf-docutils?branchName=master
-    :target: https://dev.azure.com/hdmf-dev/hdmf-docutils/_build/latest?definitionId=1&branchName=master
-    :alt:    Build Status
+.. image:: https://github.com/hdmf-dev/hdmf-docutils/actions/workflows/codespell.yml/badge.svg
+    :target: https://github.com/hdmf-dev/hdmf-docutils/actions/workflows/codespell.yml
+    :alt:    Codespell
+
+.. image:: https://github.com/hdmf-dev/hdmf-docutils/actions/workflows/doc_builds.yml/badge.svg
+    :target: https://github.com/hdmf-dev/hdmf-docutils/actions/workflows/doc_builds.yml
+    :alt:    Doc Builds
+
+.. image:: https://github.com/hdmf-dev/hdmf-docutils/actions/workflows/publish_pypi.yml/badge.svg
+    :target: https://github.com/hdmf-dev/hdmf-docutils/actions/workflows/publish_pypi.yml
+    :alt:    Publish to PyPI
+
+.. image:: https://github.com/hdmf-dev/hdmf-docutils/actions/workflows/ruff.yml/badge.svg
+    :target: https://github.com/hdmf-dev/hdmf-docutils/actions/workflows/ruff.yml
+    :alt:    Ruff
+
+.. image:: https://github.com/hdmf-dev/hdmf-docutils/actions/workflows/run_all_tests.yml/badge.svg
+    :target: https://github.com/hdmf-dev/hdmf-docutils/actions/workflows/run_all_tests.yml
+    :alt:    Run all tests
 
 Overview
 --------
 
 This project is a collection of CLIs, scripts and modules useful to generate the HDMF documentation.
 
-Using hdmf-docutils to generate documentation for an extension: http://pynwb.readthedocs.io/en/latest/extensions.html#documenting-extensions
+Using hdmf-docutils to generate documentation for an extension: https://nwb-overview.readthedocs.io/en/latest/extensions_tutorial/6_documenting_extension.html
 
 To cite this tool use: (HDMF Documentation Utilities, RRID:SCR_021341)
 
