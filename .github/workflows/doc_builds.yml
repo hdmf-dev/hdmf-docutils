@@ -1,4 +1,4 @@
-name: Add Check for the HDMF-Common-Schema and NWB-schema doc builds
+name: Build the HDMF-Common-Schema and NWB-schema documentation
 
 on:
   pull_request:
