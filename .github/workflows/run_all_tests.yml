@@ -3,7 +3,6 @@ on:
   schedule:
     - cron: '0 5 * * 1'  # once per week on Monday at 5:00 AM UTC
   push:
-  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -23,11 +22,11 @@ jobs:
           - windows-latest
           - macos-latest
         python-ver:
-          - 3.9
-          - 3.10
-          - 3.11
-          - 3.12
-          - 3.13
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
     steps:
       - name: Checkout repo with submodules
         uses: actions/checkout@v4
