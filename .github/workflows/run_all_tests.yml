@@ -44,6 +44,10 @@ jobs:
           python -m pip install pytest
           python -m pip list
 
+      - name: Install hdmf-docutils
+        run: |
+          python -m pip install .
+
       - name: Run tests
         run: |
           pytest
