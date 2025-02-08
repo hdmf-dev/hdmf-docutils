@@ -246,7 +246,7 @@ def render_data_type_section(section,
                     label=LabelHelper.get_src_section_label(rt,
                                                             spec_generate_src_file, spec_show_yaml_src)))
 
-        # Render the propoerties of the spec as part of the overview
+        # Render the properties of the spec as part of the overview
         type_desc_doc.add_text(SpecToRST.render_specification_properties(rt_spec,
                                                                          type_desc_doc.newline,
                                                                          ignore_props=ignore_props,
@@ -427,7 +427,7 @@ def main():
     spec_dir = spec_input_spec_dir
     # Set the names of the main output files
     doc_filename = os.path.join(file_dir, spec_output_doc_filename)  # Name of the file with main documentation
-    # Name fo the file where the YAML sources are rendered
+    # Name of the file where the YAML sources are rendered
     srcdoc_filename = os.path.join(file_dir, spec_output_src_filename) if spec_generate_src_file else None
     master_filename = os.path.join(file_dir, spec_output_master_filename)
     type_hierarchy_doc_filename = os.path.join(file_dir, spec_output_doc_type_hierarchy_filename)

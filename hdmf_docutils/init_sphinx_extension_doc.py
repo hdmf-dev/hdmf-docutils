@@ -418,7 +418,7 @@ latex_elements = {
 }
 """
 
-    # Add the input options ot the settings
+    # Add the input options to the settings
     custom_autodoc_settings = \
 """# -*- coding: utf-8 -*-
 # Configuration file for generating sources for the format documentation from the YAML specification files
@@ -794,7 +794,7 @@ def define_cl_args():
     parser.add_argument('--resolve_type_inc', dest='resolve_type_inc', action='store', type=bool_type, required=False, default=False,
                         help="Always resolve type includes to show the full spec of an object including inherited components?")
     parser.add_argument('--latex_clearpage_after_type', dest='latex_clearpage_after_type', action='store', type=bool_type, required=False, default=True,
-                        help="Add clearpage command in latex after each neurodata_type to esnure figures always appear in the right section at the cost of adding empty space between sections.")
+                        help="Add clearpage command in latex after each neurodata_type to ensure figures always appear in the right section at the cost of adding empty space between sections.")
     parser.add_argument('--table_depth_char', dest='table_depth_char', action='store', type=str, required=False, default='.',
                         help="Char to be used to indent entries in description tables to indicate the depth of the object.")
     parser.add_argument('--abbrv_main_obj_in_table', dest='abbrv_main_obj_in_table', action='store', type=bool_type, required=False, default=True,
@@ -806,7 +806,7 @@ def define_cl_args():
     parser.add_argument('--generate_src_file', dest='generate_src_file', action='store', type=bool_type, required=False, default=True,
                         help="Generate separate reStructuredText files for the YAML sources rather than including them in the description files?")
     parser.add_argument('--show_hierarchy_plots', dest='show_hierarchy_plots', action='store', type=bool_type, required=False, default=True,
-                        help="Generate and show plots of the hierarchy for each tyep/neurodata_type?")
+                        help="Generate and show plots of the hierarchy for each type/neurodata_type?")
     parser.add_argument('--show_yaml_src', dest='show_yaml_src', action='store', type=bool_type, required=False, default=True,
                         help="Show the source specification as YAML.")
     parser.add_argument('--custom_description', dest='custom_description', action='store', type=str, required=False, default=None,

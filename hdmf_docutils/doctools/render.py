@@ -141,22 +141,22 @@ class HierarchyDescription(dict):
                 type_def_key = obj.def_key()
                 type_inc_key = obj.inc_key()
                 if obj.get(type_def_key, None) is not None:
-                    nd = obj[type_def_key]
+                    ndt = obj[type_def_key]
                 else:
-                    nd = obj.get(type_inc_key, None)
+                    ndt = obj.get(type_inc_key, None)
                 specstats.add_group(name=obj_name,
-                                    data_type=nd)
+                                    data_type=ndt)
             elif isinstance(obj, DatasetSpec):
                 type_def_key = obj.def_key()
                 type_inc_key = obj.inc_key()
                 if obj.get(type_def_key, None) is not None:
-                    nd = obj[type_def_key]
+                    ndt = obj[type_def_key]
                 else:
-                    nd = obj.get(type_inc_key, None)
+                    ndt = obj.get(type_inc_key, None)
                 specstats.add_dataset(name=obj_name,
                                       shape=obj.shape,
                                       dtype=obj['type'] if hasattr(obj, 'type') else None,
-                                      data_type=nd)
+                                      data_type=ndt)
             elif isinstance(obj, AttributeSpec):
                 specstats.add_attribute(name=obj_name,
                                         value=obj.value)
