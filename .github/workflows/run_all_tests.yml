@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: '0 5 * * 1'  # once per week on Monday at 5:00 AM UTC
   push:
+    branches:
+      - main
+  pull_request:
   workflow_dispatch:
 
 jobs:
