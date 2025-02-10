@@ -50,3 +50,7 @@ docs/_build
 # IDE junk
 .idea/*
 *.swp
+
+# Add Hatch
+.hatch/
+.venv/

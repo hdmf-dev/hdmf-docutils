@@ -1,19 +1,17 @@
-Maintainers: How to make a new release ?
-----------------------------------------
+Maintainers: How to make a new release?
+---------------------------------------
 
 *Fixed font text area below list commands expected to be entered in a bash shell*
 
-1. Configure ``~/.pypirc`` as described `here <https://packaging.python.org/distributing/#uploading-your-project-to-pypi>`_.
+1. Make sure the cli and module work as expected.
 
-2. Make sure the cli and module work as expected.
-
-3. Choose the next release version number:
+2. Choose the next release version number:
 
 ::
 
     release="X.Y.Z"
 
-4. Tag the release and push:
+3. Tag the release and push:
 
 *If you don't have a GPG key, omit the ``-s`` option.*
 
@@ -22,14 +20,22 @@ Maintainers: How to make a new release ?
     git tag -s -m "hdmf-docutils ${release}" ${release} origin/main
     git push origin ${release}
 
-5. Create the source tarball and wheel:
+4. Create a new release on the GitHub UI and the `publish_pypi.yml` workflow will automatically upload the packages to PyPI.
+
+Maintainers: How to manually upload packages to PyPI?
+-----------------------------------------------------
+
+5. Configure ``~/.pypirc`` as described `here <https://packaging.python.org/en/latest/tutorials/packaging-projects/#uploading-your-project-to-pypi>`_.
+
+6. Create the source tarball and wheel:
 
 ::
 
     rm -rf dist/
-    python setup.py sdist bdist_wheel
+    python -m pip install build
+    python -m build 
 
-6. Upload the packages to the testing PyPI instance:
+7. Upload the packages to the testing PyPI instance:
 
 ::
 
@@ -38,7 +44,7 @@ Maintainers: How to make a new release ?
 
 Check the `PyPI testing package page <https://test.pypi.org/project/hdmf-docutils/>`_.
 
-7. Upload the packages to the PyPI instance::
+8. Upload the packages to the PyPI instance::
 
 ::
 
