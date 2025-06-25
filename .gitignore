@@ -54,3 +54,6 @@ docs/_build
 # Add Hatch
 .hatch/
 .venv/
+
+# Hatch-vcs
+_version.py
