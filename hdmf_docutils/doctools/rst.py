@@ -294,9 +294,9 @@ class RSTDocument(object):
         
         # Convert to plain dict first
         clean_spec = json.loads(json.dumps(spec, indent=4, separators=(',', ': ')))
+        
         # Sort keys using YAMLSpecWriter's sort_keys method
-        hdmf_yaml_writer = YAMLSpecWriter()
-        sorted_spec = hdmf_yaml_writer.sort_keys(clean_spec)
+        sorted_spec = YAMLSpecWriter.sort_keys(clean_spec)
         
         yaml = YAML(pure=True)
         yaml.default_flow_style = False
