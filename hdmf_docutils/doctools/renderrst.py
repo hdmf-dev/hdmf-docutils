@@ -7,6 +7,7 @@ from .output import PrintHelper
 from collections import OrderedDict
 from .rst import RSTDocument, RSTTable, RSTSectionLabelHelper
 import os
+import warnings
 
 
 class DataTypeSection(dict):
@@ -328,7 +329,17 @@ class SpecToRST(object):
         ns_src_label = "hdmf-type-namespace-src"
         # Create the target doc
         if namespace_name is None:
-            namespace_name = namespace_catalog.default_namespace
+            core = namespace_catalog.core_namespaces
+            if not core:
+                raise ValueError(
+                    "namespace_name not provided and namespace_catalog has no core namespaces"
+                )
+            if len(core) > 1:
+                warnings.warn(
+                    "namespace_name not provided; namespace_catalog has multiple core "
+                    "namespaces %r. Using the first (%r)." % (core, core[0])
+                )
+            namespace_name = core[0]
         curr_namespace = namespace_catalog.get_namespace(namespace_name)
         # Section heading
 
