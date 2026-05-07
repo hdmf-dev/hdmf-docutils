@@ -118,10 +118,10 @@ def load_namespace(namespace_file,
             pass
     # Load the namespace separately if it already exists or we don't have a default type map specified
     if namespace_catalog is None:
-        namespace_catalog = NamespaceCatalog(default_namespace,
-                                             group_spec_cls=group_spec_cls,
+        namespace_catalog = NamespaceCatalog(group_spec_cls=group_spec_cls,
                                              dataset_spec_cls=dataset_spec_cls,
-                                             spec_namespace_cls=spec_namespace_cls)
+                                             spec_namespace_cls=spec_namespace_cls,
+                                             core_namespaces=[default_namespace])
         namespace_catalog.load_namespaces(namespace_file, resolve=resolve)
 
     return namespace_catalog
